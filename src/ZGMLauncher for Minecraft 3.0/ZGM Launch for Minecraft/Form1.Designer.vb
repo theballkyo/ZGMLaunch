@@ -25,7 +25,7 @@ Partial Class Form1
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(Form1))
         Me.BackgroundWorker1 = New System.ComponentModel.BackgroundWorker()
-        Me.BackgroundWorker2 = New System.ComponentModel.BackgroundWorker()
+        Me.RunGameWorker = New System.ComponentModel.BackgroundWorker()
         Me.startgame = New System.Windows.Forms.Button()
         Me.about = New System.Windows.Forms.Button()
         Me.closeme = New System.Windows.Forms.Button()
@@ -41,16 +41,17 @@ Partial Class Form1
         Me.Label5 = New System.Windows.Forms.Label()
         Me.NotifyIcon1 = New System.Windows.Forms.NotifyIcon(Me.components)
         Me.Label6 = New System.Windows.Forms.Label()
-        Me.Label7 = New System.Windows.Forms.Label()
+        Me.Username = New System.Windows.Forms.TextBox()
+        Me.RichTextBox1 = New System.Windows.Forms.RichTextBox()
         Me.SuspendLayout()
         '
         'BackgroundWorker1
         '
         Me.BackgroundWorker1.WorkerSupportsCancellation = True
         '
-        'BackgroundWorker2
+        'RunGameWorker
         '
-        Me.BackgroundWorker2.WorkerSupportsCancellation = True
+        Me.RunGameWorker.WorkerSupportsCancellation = True
         '
         'startgame
         '
@@ -210,24 +211,30 @@ Partial Class Form1
         Me.Label6.BackColor = System.Drawing.Color.Transparent
         Me.Label6.Font = New System.Drawing.Font("Comic Sans MS", 9.5!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Label6.ForeColor = System.Drawing.Color.FromArgb(CType(CType(255, Byte), Integer), CType(CType(128, Byte), Integer), CType(CType(0, Byte), Integer))
-        Me.Label6.Location = New System.Drawing.Point(516, 165)
+        Me.Label6.Location = New System.Drawing.Point(511, 163)
         Me.Label6.Name = "Label6"
-        Me.Label6.Size = New System.Drawing.Size(101, 19)
+        Me.Label6.Size = New System.Drawing.Size(109, 19)
         Me.Label6.TabIndex = 13
-        Me.Label6.Text = "Login as Guest"
+        Me.Label6.Text = "Enter Username"
         '
-        'Label7
+        'Username
         '
-        Me.Label7.AutoSize = True
-        Me.Label7.BackColor = System.Drawing.Color.Transparent
-        Me.Label7.Font = New System.Drawing.Font("Comic Sans MS", 15.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.Label7.ForeColor = System.Drawing.Color.FromArgb(CType(CType(255, Byte), Integer), CType(CType(128, Byte), Integer), CType(CType(0, Byte), Integer))
-        Me.Label7.Location = New System.Drawing.Point(518, 187)
-        Me.Label7.Name = "Label7"
-        Me.Label7.Size = New System.Drawing.Size(66, 35)
-        Me.Label7.TabIndex = 14
-        Me.Label7.Text = "Guest"
-        Me.Label7.UseCompatibleTextRendering = True
+        Me.Username.Font = New System.Drawing.Font("Comic Sans MS", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.Username.ForeColor = System.Drawing.Color.FromArgb(CType(CType(255, Byte), Integer), CType(CType(128, Byte), Integer), CType(CType(0, Byte), Integer))
+        Me.Username.Location = New System.Drawing.Point(515, 185)
+        Me.Username.MaxLength = 16
+        Me.Username.Name = "Username"
+        Me.Username.Size = New System.Drawing.Size(155, 30)
+        Me.Username.TabIndex = 15
+        '
+        'RichTextBox1
+        '
+        Me.RichTextBox1.Location = New System.Drawing.Point(1, 32)
+        Me.RichTextBox1.Name = "RichTextBox1"
+        Me.RichTextBox1.Size = New System.Drawing.Size(711, 327)
+        Me.RichTextBox1.TabIndex = 16
+        Me.RichTextBox1.Text = ""
+        Me.RichTextBox1.Visible = False
         '
         'Form1
         '
@@ -236,7 +243,7 @@ Partial Class Form1
         Me.BackColor = System.Drawing.Color.Black
         Me.BackgroundImage = Global.ZGM_Launch_for_Minecraft.My.Resources.Resources.mc21
         Me.ClientSize = New System.Drawing.Size(714, 363)
-        Me.Controls.Add(Me.Label7)
+        Me.Controls.Add(Me.Username)
         Me.Controls.Add(Me.Label6)
         Me.Controls.Add(Me.Label5)
         Me.Controls.Add(Me.ProgressBar2)
@@ -250,6 +257,7 @@ Partial Class Form1
         Me.Controls.Add(Me.closeme)
         Me.Controls.Add(Me.about)
         Me.Controls.Add(Me.startgame)
+        Me.Controls.Add(Me.RichTextBox1)
         Me.ForeColor = System.Drawing.Color.Red
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
@@ -261,7 +269,7 @@ Partial Class Form1
 
     End Sub
     Friend WithEvents BackgroundWorker1 As System.ComponentModel.BackgroundWorker
-    Friend WithEvents BackgroundWorker2 As System.ComponentModel.BackgroundWorker
+    Friend WithEvents RunGameWorker As System.ComponentModel.BackgroundWorker
     Friend WithEvents startgame As System.Windows.Forms.Button
     Friend WithEvents about As System.Windows.Forms.Button
     Friend WithEvents closeme As System.Windows.Forms.Button
@@ -277,6 +285,7 @@ Partial Class Form1
     Friend WithEvents Label5 As System.Windows.Forms.Label
     Friend WithEvents NotifyIcon1 As System.Windows.Forms.NotifyIcon
     Friend WithEvents Label6 As System.Windows.Forms.Label
-    Friend WithEvents Label7 As System.Windows.Forms.Label
+    Friend WithEvents Username As System.Windows.Forms.TextBox
+    Friend WithEvents RichTextBox1 As System.Windows.Forms.RichTextBox
 
 End Class
