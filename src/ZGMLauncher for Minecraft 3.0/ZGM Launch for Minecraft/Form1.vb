@@ -8,6 +8,7 @@ Imports System.Timers
 Imports ZGMLaunch
 Imports System.Text.RegularExpressions
 Imports System.Drawing.Text
+Imports Microsoft.Win32
 
 Public Class Form1
     Dim keyvalue(10) As String
@@ -22,6 +23,7 @@ Public Class Form1
     Dim md5f As String
     Dim server As String = "http://enjoyprice.in.th/mc/patch/" 'Old website :(
     Dim wc As WebClient = New WebClient
+    Dim dl_status As Integer = 0
     Dim time As Double
 
     Dim Library As ZGMLibrary.ZGMLibrary
@@ -144,6 +146,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         End If
 
         Dim bytesIn As Double = Double.Parse(e.BytesReceived.ToString())
+
         Dim totalBytes As Double = Double.Parse(e.TotalBytesToReceive.ToString())
         Dim percentage As Double = bytesIn / totalBytes * 100
 
@@ -156,11 +159,13 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub client_DownloadCompleted(ByVal sender As Object, ByVal e As System.ComponentModel.AsyncCompletedEventArgs)
+        dl_status = 1
         If e.Error IsNot Nothing Then
             'MsgBox(e.Error.Message)
             errorcheck = 1
             BackgroundWorker1.CancelAsync()
         End If
+        'BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), 0, 0, 0, 0)
     End Sub
 
     Private Sub DownloadText(ByVal percentage As Double, ByVal speed As Double, ByVal bytesIn As Double, ByVal totalBytes As Double)
@@ -336,13 +341,16 @@ ByVal KeyName As String, ByVal TheValue As String)
         End If
     End Sub
     Private Sub dl2(ByVal url, ByVal filename)
+        dl_status = 0
         AddHandler wc.DownloadProgressChanged, AddressOf client_ProgressChanged
         AddHandler wc.DownloadFileCompleted, AddressOf client_DownloadCompleted
         time = 0
+        'wc.DownloadFileAsync(New Uri(url), MyPath + filename)
         wc.DownloadFileAsync(New Uri(url), MyPath + filename)
-        Do Until Not wc.IsBusy
+        While dl_status = 0
             Thread.Sleep(10)
-        Loop
+        End While
+
     End Sub
     Private Sub unzip(ByVal filename)
         'Unzip
@@ -404,7 +412,7 @@ ByVal KeyName As String, ByVal TheValue As String)
 
     Private Sub closeme_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles closeme.Click
         GameExited()
-        MsgBox("Thanks for use my programe :D")
+        'MsgBox("Thanks for use my programe :D")
         Me.Close()
     End Sub
 
@@ -416,8 +424,8 @@ ByVal KeyName As String, ByVal TheValue As String)
         Label4.Text = ""
         Label1.Text = "© ZGMLauncher " + My.Settings.fullversion + " :: ZGMLibrary " + ZGM.GetVersion() + " Dev by Theballkyo"
         'Loadsetting()
-        Me.Text = "ZGMLaunch :: Version " + My.Settings.fullversion
-        ZGM.LockFile(MyPath & server_file_name)
+        Me.Text = "ZGMLaunch :: Version " + My.Settings.fullversion + " - Debug"
+        'ZGM.LockFile(MyPath & server_file_name)
     End Sub
     Private Sub valini(ByRef keyname, ByRef keyvalue)
         keyname(1) = "DirServer"
@@ -621,7 +629,7 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
     Private Sub GameLog(ByVal text As String)
         RichTextBox1.AppendText(vbLf)
-        RichTextBox1.AppendText(" " & text)
+        RichTextBox1.AppendText(" [" & text)
         RichTextBox1.SelectionStart = RichTextBox1.Text.Length
         RichTextBox1.ScrollToCaret()
 
@@ -636,11 +644,11 @@ ByVal KeyName As String, ByVal TheValue As String)
             End If
             t1.Abort()
         End If
-        RichTextBox1.BringToFront()
-        RichTextBox1.Visible = False
-        Me.Show()
-        Me.WindowState = FormWindowState.Normal
-        Label2.Text = "Status : Ready"
+        'RichTextBox1.BringToFront()
+        'RichTextBox1.Visible = False
+        'Me.Show()
+        'Me.WindowState = FormWindowState.Normal
+        'Label2.Text = "Status : Ready"
     End Sub
 
     Private Sub RunGame()
@@ -666,10 +674,15 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub RunGameCommand()
-        'gamePath = "C:\Users\Gamer\AppData\Roaming\.minecraft\"
         Dim command = "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx1G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=" & gamePath & "versions\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332-natives-475500669532385 -cp " & gamePath & "libraries\com\mumfrey\liteloader\1.8\liteloader-1.8.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\net\minecraftforge\forge\1.8-11.14.1.1332\forge-1.8-11.14.1.1332.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\com\typesafe\akka\akka-actor_2.11\2.3.3\akka-actor_2.11-2.3.3.jar;" & gamePath & "libraries\com\typesafe\config\1.2.1\config-1.2.1.jar;" & gamePath & "libraries\org\scala-lang\scala-actors-migration_2.11\1.1.0\scala-actors-migration_2.11-1.1.0.jar;" & gamePath & "libraries\org\scala-lang\scala-compiler\2.11.1\scala-compiler-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-library_2.11\1.0.2\scala-continuations-library_2.11-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-plugin_2.11.1\1.0.2\scala-continuations-plugin_2.11.1-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\scala-library\2.11.1\scala-library-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-parser-combinators_2.11\1.0.1\scala-parser-combinators_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-reflect\2.11.1\scala-reflect-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-swing_2.11\1.0.1\scala-swing_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar;" & gamePath & "libraries\lzma\lzma\0.0.1\lzma-0.0.1.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;" & gamePath & "libraries\java3d\vecmath\1.5.2\vecmath-1.5.2.jar;" & gamePath & "libraries\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;" & gamePath & "libraries\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.6\jopt-simple-4.6.jar;" & gamePath & "libraries\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;" & gamePath & "libraries\com\paulscode\codecwav\20101023\codecwav-20101023.jar;" & gamePath & "libraries\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;" & gamePath & "libraries\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;" & gamePath & "libraries\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;" & gamePath & "libraries\io\netty\netty-all\4.0.15.Final\netty-all-4.0.15.Final.jar;" & gamePath & "libraries\com\google\guava\guava\17.0\guava-17.0.jar;" & gamePath & "libraries\org\apache\commons\commons-lang3\3.3.2\commons-lang3-3.3.2.jar;" & gamePath & "libraries\commons-io\commons-io\2.4\commons-io-2.4.jar;" & gamePath & "libraries\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;" & gamePath & "libraries\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;" & gamePath & "libraries\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;" & gamePath & "libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;" & gamePath & "libraries\com\mojang\authlib\1.5.17\authlib-1.5.17.jar;" & gamePath & "libraries\com\mojang\realms\1.6.1\realms-1.6.1.jar;" & gamePath & "libraries\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;" & gamePath & "libraries\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;" & gamePath & "libraries\tv\twitch\twitch\6.5\twitch-6.5.jar;" & gamePath & "versions\1.8\1.8.jar net.minecraft.launchwrapper.Launch --tweakClass com.mumfrey.liteloader.launch.LiteLoaderTweaker --username " & Username.Text & " --version 1.8 --gameDir " & gamePath_ & " --assetsDir " & gamePath & "assets --assetIndex 1.8 --accessToken myaccesstoken --userProperties {} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker"
-        procStartInfo.Arguments = Game.getCommand(gamePath, Username.Text, 1)
-        procStartInfo.FileName = "javaw"
+        Dim javaPath As String = Game.getJavaPath("1.8")
+        'MsgBox(javaPath & "\bin\javaw.exe")
+        If javaPath = Nothing Then
+            MsgBox("กรุณาลง Java เวอร์ชั่น 1.8 ขึ้นไป")
+            BeginInvoke(New GameExitedSafe(AddressOf GameExited))
+        End If
+        procStartInfo.Arguments = Game.getCommand(gamePath, Username.Text, "1.8")
+        procStartInfo.FileName = javaPath & "\bin\javaw.exe"
         procStartInfo.RedirectStandardOutput = True
         procStartInfo.UseShellExecute = False
         procStartInfo.CreateNoWindow = True
@@ -677,17 +690,22 @@ ByVal KeyName As String, ByVal TheValue As String)
         proc = New Process()
         proc.StartInfo = procStartInfo
 
-        proc.Start()
+        Try
+            proc.Start()
 
-        BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game...")
-
-        While proc.StandardOutput.Peek() > -1
-            Dim t = proc.StandardOutput.ReadLine()
-            BeginInvoke(New GameLogSafe(AddressOf GameLog), t)
-            proc.StandardOutput.Read()
-            'Thread.Sleep(1)
-        End While
-
+            BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game...")
+            BeginInvoke(New GameLogSafe(AddressOf GameLog), "Javapath = " & javaPath & "\bin\javaw.exe")
+            BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, Username.Text, 1))
+            While proc.StandardOutput.Peek() > -1
+                Dim t = proc.StandardOutput.ReadLine()
+                BeginInvoke(New GameLogSafe(AddressOf GameLog), t)
+                proc.StandardOutput.Read()
+                'Thread.Sleep(1)
+            End While
+        Catch ex As Exception
+            MsgBox(ex.Message())
+        End Try
+        
         'While Not proc.HasExited
         '    Thread.Sleep(100)
         'End While

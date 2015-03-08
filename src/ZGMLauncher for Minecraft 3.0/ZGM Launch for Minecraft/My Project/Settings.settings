@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="version" Type="System.String" Scope="User">
-      <Value Profile="(Default)">3002</Value>
+      <Value Profile="(Default)">3009</Value>
     </Setting>
     <Setting Name="fullversion" Type="System.String" Scope="User">
-      <Value Profile="(Default)">3.0 Beta2</Value>
+      <Value Profile="(Default)">3.0 Beta9</Value>
     </Setting>
     <Setting Name="Build" Type="System.String" Scope="User">
       <Value Profile="(Default)">2</Value>

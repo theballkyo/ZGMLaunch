@@ -1,4 +1,5 @@
-﻿Module Game
+﻿Imports System.Text.RegularExpressions
+Module Game
     Dim library_list() As String = {
             "libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar",
             "libraries\com\google\guava\guava\17.0\guava-17.0.jar",
@@ -48,12 +49,15 @@
             "libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar",
             "libraries\tv\twitch\twitch\6.5\twitch-6.5.jar"
             }
-    Function getCommand(gamePath As String, name As String, version As Integer)
+    Function getCommand(gamePath As String, name As String, version As String)
 
         Dim library As String
+        Dim os_bit As Integer = getJavaBit(version)
+
+        ' -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx512M -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M 
         Dim c As String = "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx1G " & _
                           "-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=" & _
-                          gamePath & "Djava\1.8-Forge11.14.1.1332-natives -cp "
+                          gamePath & "Djava\" & os_bit & " -cp "
         For Each library In library_list
             c &= gamePath & library & ";"
         Next
@@ -62,5 +66,113 @@
              " --version 1.8 --gameDir " & gamePath & " --assetsDir " & gamePath & "assets --assetIndex 1.8 --accessToken myaccesstoken --userProperties {} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker"
 
         Return c
+    End Function
+
+    Function checkVerJava(ByVal version As String)
+        Dim ver As String
+        ver = My.Computer.Registry.GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment", "CurrentVersion", Nothing)
+        'Return ver
+        If ver.Contains(version) Then
+            Return True
+        End If
+        Return False
+    End Function
+
+    Function getJavaBit(ByVal version As String)
+        'If Not checkVerJava(version) Then
+        '    Return Nothing
+        'End If
+
+        Dim procStartInfo As New System.Diagnostics.ProcessStartInfo()
+        Dim proc As System.Diagnostics.Process = New Process()
+        procStartInfo.Arguments = "-version "
+        procStartInfo.FileName = "java"
+        procStartInfo.RedirectStandardOutput = True
+        procStartInfo.RedirectStandardError = True
+        procStartInfo.UseShellExecute = False
+        procStartInfo.CreateNoWindow = True
+
+        proc = New Process()
+        proc.StartInfo = procStartInfo
+
+        Try
+            proc.Start()
+            Dim output As String = proc.StandardError.ReadLine()
+
+            Dim regex As Regex = New Regex("java version ""(.*)""")
+            Dim ver As Match = regex.Match(output)
+            output = proc.StandardError.ReadLine()
+            output = proc.StandardError.ReadLine()
+
+            Dim regex2 As Regex = New Regex("\d+")
+
+            Dim javabit As Match = regex2.Match(output)
+
+            If Not ver.Groups(1).Value().Contains(version) Then
+                Return Nothing
+            End If
+
+            If javabit.Value() = "64" Then
+                Return 64
+            Else
+                Return 32
+            End If
+        Catch ex As Exception
+            Return Nothing
+        End Try
+    End Function
+
+
+    Function getJavaPath(version As String)
+
+        Dim path As String = Nothing
+
+        Dim fullver = My.Computer.Registry.GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment", "CurrentVersion", Nothing)
+
+        Dim procStartInfo As New System.Diagnostics.ProcessStartInfo()
+        Dim proc As System.Diagnostics.Process = New Process()
+        procStartInfo.Arguments = "-version "
+        procStartInfo.FileName = "java"
+        procStartInfo.RedirectStandardOutput = True
+        procStartInfo.RedirectStandardError = True
+        procStartInfo.UseShellExecute = False
+        procStartInfo.CreateNoWindow = True
+
+        proc = New Process()
+        proc.StartInfo = procStartInfo
+
+        Try
+            proc.Start()
+            Dim output As String = proc.StandardError.ReadLine()
+
+            Dim regex As Regex = New Regex("java version ""(.*)""")
+            Dim ver As Match = regex.Match(output)
+            output = proc.StandardError.ReadLine()
+            output = proc.StandardError.ReadLine()
+
+            Dim regex2 As Regex = New Regex("\d+")
+
+            Dim os_bit As Match = regex2.Match(output)
+
+            If Not ver.Groups(1).Value().Contains(version) Then
+                Return Nothing
+            End If
+
+            If os_bit.Value() = "64" Then
+                'MsgBox(n.Groups(1).Value())
+                'MsgBox(m.Value())
+                path = "C:\Program Files\Java\jre" & ver.Groups(1).Value()
+            Else
+                If Environment.Is64BitOperatingSystem Then
+                    path = "C:\Program Files (x86)\Java\jre" & ver.Groups(1).Value()
+                Else
+                    path = "C:\Program Files\Java\jre" & ver.Groups(1).Value()
+                End If
+            End If
+        Catch ex As Exception
+            path = Nothing
+        End Try
+
+        Return path
     End Function
 End Module
