@@ -118,9 +118,21 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="RichTextBox1.Text" xml:space="preserve">
-    <value>ZGMLaunch for Minecraft V2.2 พัฒนาโดย Theballkyo !
+    <value>ZGMLaunch for Minecraft V3.0 พัฒนาโดย Theballkyo !
 
 Change log
+
+V3.0 Beta 2
+- แก้บัค ProgressBar
+
+V3.0 Beta1
+- เปลี่ยนระบบใหม่เยอะ
+- แก้ไข Command Start Game
+- ปรับดีไซน์
+- ยังไม่เสร็จเด่วมีอัพเดทต่อ
+- ระบบ Download ตัวเกมยังไม่เสร็จแต่อัพเดทตัวโปรแกรมเองเสร็จแล้ว
+===================================
+
 V1.0 เริ่มพัฒนาโปรแกรม
 V1.0.1 แก้ไขบักโปรแกรมเล็กน้อย
 V1.0.2 แก้ไขบักเล็กน้อย
@@ -134,9 +146,6 @@ V2.1 เพิ่มระบบตรวจสอบไฟล์ก่อนเ
 
 V2.2 เพิ่มระบบลบ mod ที่ไม่ใช้ได้เอง
 - ทำระบบ Login ในโปรแกรมได้เลย
-- เพิ่มระบบเล่นคนเดียว
-
-======================
-Login code base by lion328</value>
+- เพิ่มระบบเล่นคนเดียว</value>
   </data>
 </root>

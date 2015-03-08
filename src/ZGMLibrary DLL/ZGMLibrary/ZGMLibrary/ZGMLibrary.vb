@@ -2,7 +2,6 @@
 Imports System.Xml
 Imports System.Text.RegularExpressions
 
-
 Public Class ZGMLibrary
     Public Shared Function GetJavaVersion() As String
         Try
@@ -17,10 +16,10 @@ Public Class ZGMLibrary
             Dim digits() As String = Regex.Split(proc.StandardError.ReadLine(), """")
             Return digits(1)
         Catch objException As Exception
-            Return "555"
+            Return Nothing
         End Try
     End Function
-    Function XmlPatchRead(ByVal filename As String, ByRef file_data(,) As String)
+    Shared Function XmlPatchRead(ByVal filename As String, ByRef file_data(,) As String)
         Dim i = 0
         Dim m_xmlr As XmlTextReader
         'Create the XML Reader

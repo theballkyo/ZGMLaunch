@@ -20,9 +20,12 @@ Public Class Form1
     Dim fn As String
     Dim path_file As String
     Dim md5f As String
-    Dim server As String = "http://mc.zone-gamer.th.ht/patch/" 'Old website :(
+    Dim server As String = "http://enjoyprice.in.th/mc/patch/" 'Old website :(
     Dim wc As WebClient = New WebClient
     Dim time As Double
+
+    Dim Library As ZGMLibrary.ZGMLibrary
+    Dim Config As ZGMLibrary.ZGMConfig
 
     Dim procStartInfo As New System.Diagnostics.ProcessStartInfo()
     Dim proc As System.Diagnostics.Process = New Process()
@@ -30,9 +33,12 @@ Public Class Form1
     Dim t1 As New Threading.Thread(AddressOf RunGameCommand)
 
     Public Shared ProgramFilesPath As String = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) & "\"
+    Public Shared appdata As String = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
     Public Shared MyPath As String = Application.StartupPath + "\"
     Public Shared server_file_name As String = "zgm"
     Public Shared UrlAuth As String = ""
+    Public Shared gamePath = MyPath & server_file_name & "\"
+    Public Shared gamePath_ = MyPath & server_file_name
 
     'Delegate Sub ChangeTextsSafe(ByVal length As Long, ByVal position As Integer, ByVal speed As Double, ByVal filename As String)
     Delegate Sub DownloadTextSafe(ByVal percentage As Double, ByVal speed As Double, ByVal bytesIn As Double, ByVal totalBytes As Double)
@@ -40,7 +46,7 @@ Public Class Form1
     Delegate Sub DownloadCompleteSafe(ByVal cancelled As Boolean)
     Delegate Sub showform()
     Delegate Sub GameLogSafe(ByVal text As String)
-    Delegate Sub ExitGameSafe()
+    Delegate Sub GameExitedSafe()
     Private Declare Unicode Function WritePrivateProfileString Lib "kernel32" _
          Alias "WritePrivateProfileStringW" (ByVal lpApplicationName As String, _
          ByVal lpKeyName As String, ByVal lpString As String, _
@@ -158,7 +164,10 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub DownloadText(ByVal percentage As Double, ByVal speed As Double, ByVal bytesIn As Double, ByVal totalBytes As Double)
-        ProgressBar1.Value = Int32.Parse(Math.Truncate(percentage).ToString())
+        If Int32.Parse(Math.Truncate(percentage).ToString()) >= 0 Then
+            ProgressBar1.Value = Int32.Parse(Math.Truncate(percentage).ToString())
+        End If
+
 
         Me.Label3.Text = "File Name : " & fn & " - File Size: " & Math.Round((totalBytes / 1024), 2) & " KB"
 
@@ -394,34 +403,20 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub closeme_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles closeme.Click
-        If BackgroundWorker1.IsBusy <> True Then
-        Else
-            BackgroundWorker1.CancelAsync()
-        End If
-        If t1.IsAlive Then
-            If Not proc.HasExited Then
-                proc.Kill()
-            End If
-            t1.Abort()
-        End If
-        End
+        GameExited()
+        MsgBox("Thanks for use my programe :D")
+        Me.Close()
     End Sub
 
     Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
-
-        'Dim pfc As New PrivateFontCollection()
-        'pfc.AddFontFile(MyPath & "Waffle Regular.otf")
-        'Label1.Font = New Font(pfc.Families(0), 16, FontStyle.Bold)
-
-        WebBrowser1.Navigate("http://mc.zone-gamer.th.ht/launchnew")
+        WebBrowser1.Navigate(server & "patchnews2.htm")
         AddHandler WebBrowser1.DocumentCompleted, New WebBrowserDocumentCompletedEventHandler(AddressOf PageWaiter)
         'Label1.Text = New System.Text.UTF7Encoding().GetString(Convert.FromBase64String("qTIwMTIgWkdNTGF1bmNoIDEuMC4yIERldmVsb3BlZCBieSBUaGViYWxsa3lv"))
         Label3.Text = ""
         Label4.Text = ""
-        Label1.Text = "© ZGMLauncher " + My.Settings.fullversion + " :: ZGMLibrary " + ZGM.GetVersion() + " Developed by Theballkyo"
-        'Load setting form config.ini 
-        Loadsetting()
-
+        Label1.Text = "© ZGMLauncher " + My.Settings.fullversion + " :: ZGMLibrary " + ZGM.GetVersion() + " Dev by Theballkyo"
+        'Loadsetting()
+        Me.Text = "ZGMLaunch :: Version " + My.Settings.fullversion
         ZGM.LockFile(MyPath & server_file_name)
     End Sub
     Private Sub valini(ByRef keyname, ByRef keyvalue)
@@ -447,16 +442,16 @@ ByVal KeyName As String, ByVal TheValue As String)
         Me.Text = keyvalue(2) + " :: Version " + My.Settings.fullversion
         'server = keyvalue(3)
         UrlAuth = keyvalue(4)
-        If keyvalue(5) = "" Then
-            WebBrowser1.Navigate("http://mc.zone-gamer.th.ht/freelauncher")
-        Else
-            WebBrowser1.Navigate(keyvalue(5))
-        End If
+        'If keyvalue(5) = "" Then
+        '    WebBrowser1.Navigate("http://mc.zone-gamer.th.ht/freelauncher")
+        'Else
+        '    WebBrowser1.Navigate(keyvalue(5))
+        'End If
     End Sub
 
     Private Sub startgame_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles startgame.Click
-        RunGame()
-        Return
+        'RunGame()
+        'Return
         'If File.Exists(path & "server.ini") Then
         'File.Delete(path & "server.ini")
         'End If
@@ -468,11 +463,13 @@ ByVal KeyName As String, ByVal TheValue As String)
             Me.Label2.Text = "Status : Downloading patchlist"
             BackgroundWorker1.RunWorkerAsync()
         End If
+
+
     End Sub
 
     Private Sub PageWaiter(ByVal sender As Object, ByVal e As WebBrowserDocumentCompletedEventArgs)
         If WebBrowser1.ReadyState = WebBrowserReadyState.Complete Then
-            If WebBrowser1.IsOffline Then
+            If Not WebBrowser1.IsOffline Then
                 WebBrowser1.Visible = True
             End If
             RemoveHandler WebBrowser1.DocumentCompleted, New WebBrowserDocumentCompletedEventHandler(AddressOf PageWaiter)
@@ -510,10 +507,10 @@ ByVal KeyName As String, ByVal TheValue As String)
         Dim bound1 As Integer = file_data.GetUpperBound(1)
         'Check program update
         'Dim zgmversion = file_data(3, 0)
-        Dim sv_ver As String = ZGM.CheckUpdate(server_file_name)
-        If Regex.IsMatch(sv_ver, "^[0-9]+$") Then
-            If My.Settings.version < sv_ver Then
-                dl2("http://dl1.zone-gamer.th.ht/mc/zgmlaunch.zip", "zgmlaunch.zip")
+        'Dim sv_ver As String = ZGM.CheckUpdate(server_file_name)
+        If Regex.IsMatch(file_data(3, 0), "^[0-9]+$") Then
+            If My.Settings.version < file_data(3, 0) Then
+                dl2(server & "zgmlaunch.zip", "zgmlaunch.zip")
                 unzip("zgmlaunch.zip")
             End If
         End If
@@ -557,19 +554,7 @@ ByVal KeyName As String, ByVal TheValue As String)
                 End If
             End If
         Next
-        'MsgBox("ตรวจสอบสำเร็จแล้ว", MsgBoxStyle.OkOnly)
 
-
-        '    For Each dt As String In file_data
-        'If dt = "" Then
-        'Exit For
-        '   End If
-        '  If CalcMD5((path + "test.xml")) <> dt(1) Then
-        '' MsgBox("error")
-        '  End If
-        '  MsgBox(dt)
-        ' Next
-        'MsgBox(keyvalue(2))
     End Sub
     Private Sub bw1_RunWorkerCompleted(ByVal sender As Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
 
@@ -588,10 +573,12 @@ ByVal KeyName As String, ByVal TheValue As String)
             'No Error ?
         Else
             Me.Label2.Text = "Status : Ready!"
-            Dim formshow As New showform(AddressOf showf)
-            Me.Invoke(formshow)
+            'Dim formshow As New showform(AddressOf showf)
+            'Me.Invoke(formshow)
         End If
         resetui()
+
+        RunGame()
 
     End Sub
 
@@ -615,20 +602,8 @@ ByVal KeyName As String, ByVal TheValue As String)
         time = time + 1
     End Sub
     Private Sub Form1_FormClosing(ByVal sender As Object, ByVal e As FormClosingEventArgs) Handles Me.FormClosing
-        If BackgroundWorker1.IsBusy = True Then
-        Else
-            BackgroundWorker1.CancelAsync()
-        End If
-        If t1.IsAlive Then
-            If Not proc.HasExited Then
-                proc.Kill()
-            End If
-            t1.Abort()
-        End If
+        GameExited()
 
-        RichTextBox1.BringToFront()
-        RichTextBox1.Visible = False
-        e.Cancel = True
     End Sub
     Public Shared Sub Hide_Form1()
         'minimize the form
@@ -644,10 +619,6 @@ ByVal KeyName As String, ByVal TheValue As String)
         Me.Show()
         Me.WindowState = FormWindowState.Normal
     End Sub
-
-    Public Sub p_OutputDataReceived(ByVal sender As Object, ByVal e As DataReceivedEventArgs)
-        BeginInvoke(New GameLogSafe(AddressOf GameLog), e.Data)
-    End Sub
     Private Sub GameLog(ByVal text As String)
         RichTextBox1.AppendText(vbLf)
         RichTextBox1.AppendText(" " & text)
@@ -658,84 +629,80 @@ ByVal KeyName As String, ByVal TheValue As String)
 
     End Sub
 
-    Private Sub RunGame_DoWork(sender As Object, e As ComponentModel.DoWorkEventArgs) Handles RunGameWorker.DoWork
-        If Not File.Exists(MyPath & "start.bat") Then
-            File.Delete(MyPath & "start.bat")
-            File.Create(MyPath & "start.bat").Dispose()
+    Private Sub GameExited()
+        If t1.IsAlive Or t1.IsThreadPoolThread Then
+            If Not proc.HasExited Then
+                proc.Kill()
+            End If
+            t1.Abort()
         End If
-        Dim command = "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx1G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=C:\Users\Gamer\AppData\Roaming\.minecraft\versions\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332-natives-475500669532385 -cp C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\mumfrey\liteloader\1.8\liteloader-1.8.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\minecraftforge\forge\1.8-11.14.1.1332\forge-1.8-11.14.1.1332.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\typesafe\akka\akka-actor_2.11\2.3.3\akka-actor_2.11-2.3.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\typesafe\config\1.2.1\config-1.2.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-actors-migration_2.11\1.1.0\scala-actors-migration_2.11-1.1.0.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-compiler\2.11.1\scala-compiler-2.11.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\plugins\scala-continuations-library_2.11\1.0.2\scala-continuations-library_2.11-1.0.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\plugins\scala-continuations-plugin_2.11.1\1.0.2\scala-continuations-plugin_2.11.1-1.0.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-library\2.11.1\scala-library-2.11.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-parser-combinators_2.11\1.0.1\scala-parser-combinators_2.11-1.0.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-reflect\2.11.1\scala-reflect-2.11.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-swing_2.11\1.0.1\scala-swing_2.11-1.0.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\lzma\lzma\0.0.1\lzma-0.0.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\java3d\vecmath\1.5.2\vecmath-1.5.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\sf\jopt-simple\jopt-simple\4.6\jopt-simple-4.6.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\codecwav\20101023\codecwav-20101023.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\io\netty\netty-all\4.0.15.Final\netty-all-4.0.15.Final.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\google\guava\guava\17.0\guava-17.0.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\commons\commons-lang3\3.3.2\commons-lang3-3.3.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\commons-io\commons-io\2.4\commons-io-2.4.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\mojang\authlib\1.5.17\authlib-1.5.17.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\mojang\realms\1.6.1\realms-1.6.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\tv\twitch\twitch\6.5\twitch-6.5.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\versions\1.8\1.8.jar net.minecraft.launchwrapper.Launch --tweakClass com.mumfrey.liteloader.launch.LiteLoaderTweaker --username " & Username.Text & " --version 1.8 --gameDir C:\Users\Gamer\AppData\Roaming\.minecraft --assetsDir C:\Users\Gamer\AppData\Roaming\.minecraft\assets --assetIndex 1.8 --accessToken myaccesstoken --userProperties {} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker"
-        procStartInfo.Arguments = command
-        procStartInfo.FileName = "java"
-        procStartInfo.RedirectStandardOutput = True
-        'procStartInfo.RedirectStandardError = False
-        'procStartInfo.RedirectStandardInput = True
-        procStartInfo.UseShellExecute = False
-        procStartInfo.CreateNoWindow = True
-
-        proc = New Process()
-        proc.StartInfo = procStartInfo
-        'AddHandler proc.OutputDataReceived, AddressOf p_OutputDataReceived
-        'AddHandler proc.Exited, AddressOf p_Exited
-
-        proc.Start()
-        ZGM.UnLockFile(MyPath & server_file_name)
-
-        BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game with command :: " & command)
-        While proc.StandardOutput.Peek() > -1
-            BeginInvoke(New GameLogSafe(AddressOf GameLog), proc.StandardOutput.ReadLine())
-            proc.StandardOutput.Read()
-        End While
-        'proc.BeginOutputReadLine()
-
-        'proc.WaitForExit()
-    End Sub
-    Private Sub RunGame_Success(ByVal sender As Object, ByVal e As System.EventArgs) Handles RunGameWorker.RunWorkerCompleted
-       
-    End Sub
-    Private Sub p_Exited(ByVal sender As Object, ByVal e As System.EventArgs)
         RichTextBox1.BringToFront()
         RichTextBox1.Visible = False
+        Me.Show()
+        Me.WindowState = FormWindowState.Normal
+        Label2.Text = "Status : Ready"
     End Sub
 
     Private Sub RunGame()
         If Username.TextLength < 3 Or Username.TextLength > 16 Then
-            MsgBox("Username must be 3-16 charactor")
+            MsgBox("Username must be 3-16 character")
+            Label2.Text = "Status : Username not correct."
         Else
+            If Not Directory.Exists(gamePath & "assets") Then
+                Label2.Text = "Status : Copying Assets..."
+                If Directory.Exists(appdata & "\.minecraft\assets") Then
+                    My.Computer.FileSystem.CopyDirectory(appdata & "\.minecraft\assets", gamePath & "assets", True)
+                End If
+            End If
             If Not t1.IsAlive Then
                 Label2.Text = "Status : Starting game..."
+                'Hide_Form1()
                 RichTextBox1.BringToFront()
                 RichTextBox1.Visible = True
+                t1 = New Threading.Thread(AddressOf RunGameCommand)
                 t1.Start()
             End If
         End If
     End Sub
 
     Private Sub RunGameCommand()
-        Dim command = "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx1G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=C:\Users\Gamer\AppData\Roaming\.minecraft\versions\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332-natives-475500669532385 -cp C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\mumfrey\liteloader\1.8\liteloader-1.8.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\minecraftforge\forge\1.8-11.14.1.1332\forge-1.8-11.14.1.1332.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\typesafe\akka\akka-actor_2.11\2.3.3\akka-actor_2.11-2.3.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\typesafe\config\1.2.1\config-1.2.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-actors-migration_2.11\1.1.0\scala-actors-migration_2.11-1.1.0.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-compiler\2.11.1\scala-compiler-2.11.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\plugins\scala-continuations-library_2.11\1.0.2\scala-continuations-library_2.11-1.0.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\plugins\scala-continuations-plugin_2.11.1\1.0.2\scala-continuations-plugin_2.11.1-1.0.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-library\2.11.1\scala-library-2.11.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-parser-combinators_2.11\1.0.1\scala-parser-combinators_2.11-1.0.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-reflect\2.11.1\scala-reflect-2.11.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-swing_2.11\1.0.1\scala-swing_2.11-1.0.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\lzma\lzma\0.0.1\lzma-0.0.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\java3d\vecmath\1.5.2\vecmath-1.5.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\sf\jopt-simple\jopt-simple\4.6\jopt-simple-4.6.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\codecwav\20101023\codecwav-20101023.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\io\netty\netty-all\4.0.15.Final\netty-all-4.0.15.Final.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\google\guava\guava\17.0\guava-17.0.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\commons\commons-lang3\3.3.2\commons-lang3-3.3.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\commons-io\commons-io\2.4\commons-io-2.4.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\mojang\authlib\1.5.17\authlib-1.5.17.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\com\mojang\realms\1.6.1\realms-1.6.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\libraries\tv\twitch\twitch\6.5\twitch-6.5.jar;C:\Users\Gamer\AppData\Roaming\.minecraft\versions\1.8\1.8.jar net.minecraft.launchwrapper.Launch --tweakClass com.mumfrey.liteloader.launch.LiteLoaderTweaker --username " & Username.Text & " --version 1.8 --gameDir C:\Users\Gamer\AppData\Roaming\.minecraft --assetsDir C:\Users\Gamer\AppData\Roaming\.minecraft\assets --assetIndex 1.8 --accessToken myaccesstoken --userProperties {} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker"
-        procStartInfo.Arguments = command
-        procStartInfo.FileName = "java"
+        'gamePath = "C:\Users\Gamer\AppData\Roaming\.minecraft\"
+        Dim command = "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx1G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=" & gamePath & "versions\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332-natives-475500669532385 -cp " & gamePath & "libraries\com\mumfrey\liteloader\1.8\liteloader-1.8.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\net\minecraftforge\forge\1.8-11.14.1.1332\forge-1.8-11.14.1.1332.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\com\typesafe\akka\akka-actor_2.11\2.3.3\akka-actor_2.11-2.3.3.jar;" & gamePath & "libraries\com\typesafe\config\1.2.1\config-1.2.1.jar;" & gamePath & "libraries\org\scala-lang\scala-actors-migration_2.11\1.1.0\scala-actors-migration_2.11-1.1.0.jar;" & gamePath & "libraries\org\scala-lang\scala-compiler\2.11.1\scala-compiler-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-library_2.11\1.0.2\scala-continuations-library_2.11-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-plugin_2.11.1\1.0.2\scala-continuations-plugin_2.11.1-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\scala-library\2.11.1\scala-library-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-parser-combinators_2.11\1.0.1\scala-parser-combinators_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-reflect\2.11.1\scala-reflect-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-swing_2.11\1.0.1\scala-swing_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar;" & gamePath & "libraries\lzma\lzma\0.0.1\lzma-0.0.1.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;" & gamePath & "libraries\java3d\vecmath\1.5.2\vecmath-1.5.2.jar;" & gamePath & "libraries\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;" & gamePath & "libraries\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.6\jopt-simple-4.6.jar;" & gamePath & "libraries\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;" & gamePath & "libraries\com\paulscode\codecwav\20101023\codecwav-20101023.jar;" & gamePath & "libraries\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;" & gamePath & "libraries\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;" & gamePath & "libraries\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;" & gamePath & "libraries\io\netty\netty-all\4.0.15.Final\netty-all-4.0.15.Final.jar;" & gamePath & "libraries\com\google\guava\guava\17.0\guava-17.0.jar;" & gamePath & "libraries\org\apache\commons\commons-lang3\3.3.2\commons-lang3-3.3.2.jar;" & gamePath & "libraries\commons-io\commons-io\2.4\commons-io-2.4.jar;" & gamePath & "libraries\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;" & gamePath & "libraries\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;" & gamePath & "libraries\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;" & gamePath & "libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;" & gamePath & "libraries\com\mojang\authlib\1.5.17\authlib-1.5.17.jar;" & gamePath & "libraries\com\mojang\realms\1.6.1\realms-1.6.1.jar;" & gamePath & "libraries\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;" & gamePath & "libraries\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;" & gamePath & "libraries\tv\twitch\twitch\6.5\twitch-6.5.jar;" & gamePath & "versions\1.8\1.8.jar net.minecraft.launchwrapper.Launch --tweakClass com.mumfrey.liteloader.launch.LiteLoaderTweaker --username " & Username.Text & " --version 1.8 --gameDir " & gamePath_ & " --assetsDir " & gamePath & "assets --assetIndex 1.8 --accessToken myaccesstoken --userProperties {} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker"
+        procStartInfo.Arguments = Game.getCommand(gamePath, Username.Text, 1)
+        procStartInfo.FileName = "javaw"
         procStartInfo.RedirectStandardOutput = True
         procStartInfo.UseShellExecute = False
         procStartInfo.CreateNoWindow = True
 
         proc = New Process()
         proc.StartInfo = procStartInfo
-        AddHandler proc.Exited, AddressOf p_Exited
+
         proc.Start()
 
-        BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game with command :: " & command)
+        BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game...")
 
         While proc.StandardOutput.Peek() > -1
             Dim t = proc.StandardOutput.ReadLine()
             BeginInvoke(New GameLogSafe(AddressOf GameLog), t)
             proc.StandardOutput.Read()
+            'Thread.Sleep(1)
         End While
 
-        t1.Abort()
+        'While Not proc.HasExited
+        '    Thread.Sleep(100)
+        'End While
+        'Exited Game and Stop Threading
+        BeginInvoke(New GameExitedSafe(AddressOf GameExited))
+        'Stop Thread
+        't1.Abort()
+
     End Sub
     Private Sub Enter_Start(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles Username.KeyDown
         If e.KeyCode = Keys.Enter Then
-            RunGame()
+            If BackgroundWorker1.IsBusy <> True Then
+                Me.Label2.Text = "Status : Downloading patchlist"
+                BackgroundWorker1.RunWorkerAsync()
+            End If
         End If
     End Sub
 End Class

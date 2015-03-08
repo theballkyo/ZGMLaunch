@@ -261,6 +261,8 @@ Partial Class Form1
         Me.ForeColor = System.Drawing.Color.Red
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
+        Me.MaximumSize = New System.Drawing.Size(730, 402)
+        Me.MinimumSize = New System.Drawing.Size(730, 402)
         Me.Name = "Form1"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "ZGM launch for Minecraft V 3.0"
