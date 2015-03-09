@@ -682,7 +682,7 @@ ByVal KeyName As String, ByVal TheValue As String)
             BeginInvoke(New GameExitedSafe(AddressOf GameExited))
         End If
         procStartInfo.Arguments = Game.getCommand(gamePath, Username.Text, "1.8")
-        procStartInfo.FileName = javaPath & "\bin\javaw.exe"
+        procStartInfo.FileName = "javaw"
         procStartInfo.RedirectStandardOutput = True
         procStartInfo.UseShellExecute = False
         procStartInfo.CreateNoWindow = True

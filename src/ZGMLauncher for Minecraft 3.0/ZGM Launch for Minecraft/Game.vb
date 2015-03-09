@@ -1,4 +1,6 @@
 ﻿Imports System.Text.RegularExpressions
+Imports Microsoft.Win32
+
 Module Game
     Dim library_list() As String = {
             "libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar",
@@ -67,12 +69,33 @@ Module Game
 
         Return c
     End Function
+    Function getVerJava() As String
+        Dim ver32 As String = ""
+        Dim ver64 As String = ""
+        Try
+            ver32 = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry32). _
+                    OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment").GetValue("CurrentVersion")
+            Return ver32
+        Catch ex As Exception
+
+        End Try
+        Try
+            ver64 = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64). _
+                OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment").GetValue("CurrentVersion")
+            Return ver64
+        Catch ex As Exception
+
+        End Try
+
+        Return Nothing
+    End Function
 
     Function checkVerJava(ByVal version As String)
-        Dim ver As String
-        ver = My.Computer.Registry.GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment", "CurrentVersion", Nothing)
+        'Dim ver As String
+        
+        'ver = My.Computer.Registry.GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment", "CurrentVersion", Nothing)
         'Return ver
-        If ver.Contains(version) Then
+        If getVerJava().Contains(version) Then
             Return True
         End If
         Return False
@@ -125,54 +148,23 @@ Module Game
 
     Function getJavaPath(version As String)
 
-        Dim path As String = Nothing
-
-        Dim fullver = My.Computer.Registry.GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment", "CurrentVersion", Nothing)
-
-        Dim procStartInfo As New System.Diagnostics.ProcessStartInfo()
-        Dim proc As System.Diagnostics.Process = New Process()
-        procStartInfo.Arguments = "-version "
-        procStartInfo.FileName = "java"
-        procStartInfo.RedirectStandardOutput = True
-        procStartInfo.RedirectStandardError = True
-        procStartInfo.UseShellExecute = False
-        procStartInfo.CreateNoWindow = True
-
-        proc = New Process()
-        proc.StartInfo = procStartInfo
-
+        Dim java_ver = getVerJava()
+        Dim ver32 As String = ""
+        Dim ver64 As String = ""
         Try
-            proc.Start()
-            Dim output As String = proc.StandardError.ReadLine()
-
-            Dim regex As Regex = New Regex("java version ""(.*)""")
-            Dim ver As Match = regex.Match(output)
-            output = proc.StandardError.ReadLine()
-            output = proc.StandardError.ReadLine()
-
-            Dim regex2 As Regex = New Regex("\d+")
-
-            Dim os_bit As Match = regex2.Match(output)
-
-            If Not ver.Groups(1).Value().Contains(version) Then
-                Return Nothing
-            End If
-
-            If os_bit.Value() = "64" Then
-                'MsgBox(n.Groups(1).Value())
-                'MsgBox(m.Value())
-                path = "C:\Program Files\Java\jre" & ver.Groups(1).Value()
-            Else
-                If Environment.Is64BitOperatingSystem Then
-                    path = "C:\Program Files (x86)\Java\jre" & ver.Groups(1).Value()
-                Else
-                    path = "C:\Program Files\Java\jre" & ver.Groups(1).Value()
-                End If
-            End If
+            ver32 = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry32). _
+                    OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment\" & java_ver).GetValue("JavaHome")
+            Return ver32
         Catch ex As Exception
-            path = Nothing
-        End Try
 
-        Return path
+        End Try
+        Try
+            ver64 = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64). _
+                OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment\" & java_ver).GetValue("JavaHome")
+            Return ver64
+        Catch ex As Exception
+
+        End Try
+        Return Nothing
     End Function
 End Module

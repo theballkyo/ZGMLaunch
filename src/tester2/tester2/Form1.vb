@@ -27,9 +27,23 @@ Public Class Form1
         'Catch ex As Exception
         '    MsgBox(ex.Message())
         'End Try
-        MsgBox(Registry.LocalMachine.OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment\1.8").GetValue("JavaHome"))
+        ' MsgBox(Registry.LocalMachine.OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment\1.8").GetValue("JavaHome"))
         'Dim output As String = proc.StandardError.ReadToEnd()
+        Dim ver32 As String = ""
+        Dim ver64 As String = ""
+        Try
+            ver32 = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry32). _
+                    OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment").GetValue("CurrentVersion")
+        Catch ex As Exception
 
+        End Try
+        Try
+            ver64 = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64). _
+                OpenSubKey("SOFTWARE\JavaSoft\Java Runtime Environment").GetValue("CurrentVersion")
+        Catch ex As Exception
+
+        End Try
+        MsgBox(ver32 & " : " & ver64)
         'MsgBox(output)
     End Sub
 
