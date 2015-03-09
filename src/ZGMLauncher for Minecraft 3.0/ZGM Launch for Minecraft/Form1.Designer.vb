@@ -174,7 +174,7 @@ Partial Class Form1
         Me.startoffline.Name = "startoffline"
         Me.startoffline.Size = New System.Drawing.Size(115, 40)
         Me.startoffline.TabIndex = 10
-        Me.startoffline.Text = "OFFLINE MODE"
+        Me.startoffline.Text = "OPEN GAME FOLDER"
         Me.startoffline.UseVisualStyleBackColor = False
         '
         'Timer1

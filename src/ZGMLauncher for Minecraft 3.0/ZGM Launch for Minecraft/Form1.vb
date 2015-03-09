@@ -467,11 +467,15 @@ ByVal KeyName As String, ByVal TheValue As String)
         'dlgame.Enabled = False
         'valini(keyname, keyvalue, keyvaluesv)
         Timer1.Start()
-        If BackgroundWorker1.IsBusy <> True Then
-            Me.Label2.Text = "Status : Downloading patchlist"
-            BackgroundWorker1.RunWorkerAsync()
+        Me.Label2.Text = "Status : Checking internet connection"
+        If My.Computer.Network.Ping("www.google.com") Then
+            If BackgroundWorker1.IsBusy <> True Then
+                Me.Label2.Text = "Status : Downloading patchlist"
+                BackgroundWorker1.RunWorkerAsync()
+            End If
         End If
-
+        MsgBox("No internet connect, start in offline mode")
+        RunGame()
 
     End Sub
 
@@ -603,7 +607,15 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub startoffline_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles startoffline.Click
-        RunGame()
+        If Not Directory.Exists(gamePath_) Then
+            Directory.CreateDirectory(gamePath_)
+        End If
+        Try
+            Process.Start(gamePath_)
+        Catch ex As Exception
+            MsgBox(ex.Message())
+        End Try
+
     End Sub
 
     Private Sub Timer1_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Timer1.Tick

@@ -1,5 +1,6 @@
 ﻿Imports System.Text.RegularExpressions
 Imports Microsoft.Win32
+Imports System.Net
 
 Module Game
     Dim library_list() As String = {
@@ -92,7 +93,7 @@ Module Game
 
     Function checkVerJava(ByVal version As String)
         'Dim ver As String
-        
+
         'ver = My.Computer.Registry.GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment", "CurrentVersion", Nothing)
         'Return ver
         If getVerJava().Contains(version) Then
@@ -166,5 +167,17 @@ Module Game
 
         End Try
         Return Nothing
+    End Function
+
+    Public Function CheckForInternetConnection() As Boolean
+        Try
+            Using client = New WebClient()
+                Using stream = client.OpenRead("http://www.google.com")
+                    Return True
+                End Using
+            End Using
+        Catch
+            Return False
+        End Try
     End Function
 End Module
