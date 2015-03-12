@@ -417,7 +417,7 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
-        WebBrowser1.Navigate(server & "patchnews2.htm")
+        WebBrowser1.Navigate(server & "patchnews2.htm?ver=" & CLng(DateTime.UtcNow.Subtract(New DateTime(1970, 1, 1)).TotalMilliseconds))
         AddHandler WebBrowser1.DocumentCompleted, New WebBrowserDocumentCompletedEventHandler(AddressOf PageWaiter)
         'Label1.Text = New System.Text.UTF7Encoding().GetString(Convert.FromBase64String("qTIwMTIgWkdNTGF1bmNoIDEuMC4yIERldmVsb3BlZCBieSBUaGViYWxsa3lv"))
         Label3.Text = ""
@@ -473,9 +473,10 @@ ByVal KeyName As String, ByVal TheValue As String)
                 Me.Label2.Text = "Status : Downloading patchlist"
                 BackgroundWorker1.RunWorkerAsync()
             End If
+        Else
+            MsgBox("No internet connect, start in offline mode")
+            RunGame()
         End If
-        MsgBox("No internet connect, start in offline mode")
-        RunGame()
 
     End Sub
 
@@ -641,14 +642,26 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
     Private Sub GameLog(ByVal text As String)
         RichTextBox1.AppendText(vbLf)
-        RichTextBox1.AppendText(" [" & text)
+        RichTextBox1.AppendText(" " & text)
         RichTextBox1.SelectionStart = RichTextBox1.Text.Length
         RichTextBox1.ScrollToCaret()
-
+        'If RichTextBox1.TextLength > 10000 Then
+        '    RichTextBox1.Clear()
+        'End If
         ''Initializing LWJGL OpenAL
 
     End Sub
+    Private Sub ProcDataReceived(ByVal sender As System.Object, ByVal d As DataReceivedEventArgs)
+        Try
+            If InvokeRequired And Not d.Data.Contains("Unable to play unknown soundEvent: minecraft:none") Then
+                Invoke(New GameLogSafe(AddressOf GameLog), d.Data)
+                Thread.Sleep(10)
+            End If
+        Catch ex As Exception
 
+        End Try
+        'BeginInvoke(New GameLogSafe(AddressOf GameLog), d.Data)
+    End Sub
     Private Sub GameExited()
         If t1.IsAlive Or t1.IsThreadPoolThread Then
             If Not proc.HasExited Then
@@ -689,12 +702,12 @@ ByVal KeyName As String, ByVal TheValue As String)
         Dim command = "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx1G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=" & gamePath & "versions\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332-natives-475500669532385 -cp " & gamePath & "libraries\com\mumfrey\liteloader\1.8\liteloader-1.8.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\net\minecraftforge\forge\1.8-11.14.1.1332\forge-1.8-11.14.1.1332.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\com\typesafe\akka\akka-actor_2.11\2.3.3\akka-actor_2.11-2.3.3.jar;" & gamePath & "libraries\com\typesafe\config\1.2.1\config-1.2.1.jar;" & gamePath & "libraries\org\scala-lang\scala-actors-migration_2.11\1.1.0\scala-actors-migration_2.11-1.1.0.jar;" & gamePath & "libraries\org\scala-lang\scala-compiler\2.11.1\scala-compiler-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-library_2.11\1.0.2\scala-continuations-library_2.11-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-plugin_2.11.1\1.0.2\scala-continuations-plugin_2.11.1-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\scala-library\2.11.1\scala-library-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-parser-combinators_2.11\1.0.1\scala-parser-combinators_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-reflect\2.11.1\scala-reflect-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-swing_2.11\1.0.1\scala-swing_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar;" & gamePath & "libraries\lzma\lzma\0.0.1\lzma-0.0.1.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;" & gamePath & "libraries\java3d\vecmath\1.5.2\vecmath-1.5.2.jar;" & gamePath & "libraries\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;" & gamePath & "libraries\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.6\jopt-simple-4.6.jar;" & gamePath & "libraries\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;" & gamePath & "libraries\com\paulscode\codecwav\20101023\codecwav-20101023.jar;" & gamePath & "libraries\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;" & gamePath & "libraries\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;" & gamePath & "libraries\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;" & gamePath & "libraries\io\netty\netty-all\4.0.15.Final\netty-all-4.0.15.Final.jar;" & gamePath & "libraries\com\google\guava\guava\17.0\guava-17.0.jar;" & gamePath & "libraries\org\apache\commons\commons-lang3\3.3.2\commons-lang3-3.3.2.jar;" & gamePath & "libraries\commons-io\commons-io\2.4\commons-io-2.4.jar;" & gamePath & "libraries\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;" & gamePath & "libraries\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;" & gamePath & "libraries\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;" & gamePath & "libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;" & gamePath & "libraries\com\mojang\authlib\1.5.17\authlib-1.5.17.jar;" & gamePath & "libraries\com\mojang\realms\1.6.1\realms-1.6.1.jar;" & gamePath & "libraries\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;" & gamePath & "libraries\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;" & gamePath & "libraries\tv\twitch\twitch\6.5\twitch-6.5.jar;" & gamePath & "versions\1.8\1.8.jar net.minecraft.launchwrapper.Launch --tweakClass com.mumfrey.liteloader.launch.LiteLoaderTweaker --username " & Username.Text & " --version 1.8 --gameDir " & gamePath_ & " --assetsDir " & gamePath & "assets --assetIndex 1.8 --accessToken myaccesstoken --userProperties {} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker"
         Dim javaPath As String = Game.getJavaPath("1.8")
         'MsgBox(javaPath & "\bin\javaw.exe")
-        If javaPath = Nothing Then
+        If javaPath = Nothing Or Game.getVerJava() = Nothing Then
             MsgBox("กรุณาลง Java เวอร์ชั่น 1.8 ขึ้นไป")
             BeginInvoke(New GameExitedSafe(AddressOf GameExited))
         End If
-        procStartInfo.Arguments = Game.getCommand(gamePath, Username.Text, "1.8")
-        procStartInfo.FileName = "javaw"
+        procStartInfo.Arguments = Game.getCommand(gamePath, gamePath_, Username.Text, "1.8")
+        procStartInfo.FileName = javaPath & "\bin\javaw.exe"
         procStartInfo.RedirectStandardOutput = True
         procStartInfo.UseShellExecute = False
         procStartInfo.CreateNoWindow = True
@@ -703,24 +716,27 @@ ByVal KeyName As String, ByVal TheValue As String)
         proc.StartInfo = procStartInfo
 
         Try
+            AddHandler proc.OutputDataReceived, AddressOf ProcDataReceived
             proc.Start()
-
+            proc.BeginOutputReadLine()
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game...")
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Javapath = " & javaPath & "\bin\javaw.exe")
-            BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, Username.Text, 1))
-            While proc.StandardOutput.Peek() > -1
-                Dim t = proc.StandardOutput.ReadLine()
-                BeginInvoke(New GameLogSafe(AddressOf GameLog), t)
-                proc.StandardOutput.Read()
-                'Thread.Sleep(1)
+            BeginInvoke(New GameLogSafe(AddressOf GameLog), "Java Bit = " & Game.getJavaBit("1.8"))
+            BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, gamePath_, Username.Text, "1.8"))
+            'While proc.StandardOutput.Peek() > -1
+            '    Dim t = proc.StandardOutput.ReadLine()
+            '    BeginInvoke(New GameLogSafe(AddressOf GameLog), proc.StandardOutput.ReadLine())
+            '    proc.StandardOutput.Read()
+            '    Thread.Sleep(1)
+            'End While
+            While Not proc.HasExited
+                Thread.Sleep(100)
             End While
         Catch ex As Exception
-            MsgBox(ex.Message())
+            'MsgBox(ex.Message())
         End Try
-        
-        'While Not proc.HasExited
-        '    Thread.Sleep(100)
-        'End While
+
+
         'Exited Game and Stop Threading
         BeginInvoke(New GameExitedSafe(AddressOf GameExited))
         'Stop Thread
@@ -729,9 +745,16 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
     Private Sub Enter_Start(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles Username.KeyDown
         If e.KeyCode = Keys.Enter Then
-            If BackgroundWorker1.IsBusy <> True Then
-                Me.Label2.Text = "Status : Downloading patchlist"
-                BackgroundWorker1.RunWorkerAsync()
+            startgame.Enabled = False
+            Me.Label2.Text = "Status : Checking internet connection"
+            If My.Computer.Network.Ping("www.google.com") Then
+                If BackgroundWorker1.IsBusy <> True Then
+                    Me.Label2.Text = "Status : Downloading patchlist"
+                    BackgroundWorker1.RunWorkerAsync()
+                End If
+            Else
+                MsgBox("No internet connect, start in offline mode")
+                RunGame()
             End If
         End If
     End Sub
