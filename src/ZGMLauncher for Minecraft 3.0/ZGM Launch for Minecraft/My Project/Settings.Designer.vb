@@ -56,7 +56,7 @@ Namespace My
         
         <Global.System.Configuration.UserScopedSettingAttribute(),  _
          Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
-         Global.System.Configuration.DefaultSettingValueAttribute("3017")>  _
+         Global.System.Configuration.DefaultSettingValueAttribute("3019")>  _
         Public Property version() As String
             Get
                 Return CType(Me("version"),String)
@@ -68,7 +68,7 @@ Namespace My
         
         <Global.System.Configuration.UserScopedSettingAttribute(),  _
          Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
-         Global.System.Configuration.DefaultSettingValueAttribute("3.0.5")>  _
+         Global.System.Configuration.DefaultSettingValueAttribute("3.0.7")>  _
         Public Property fullversion() As String
             Get
                 Return CType(Me("fullversion"),String)

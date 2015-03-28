@@ -25,6 +25,7 @@ Public Class Form1
     Dim wc As WebClient = New WebClient
     Dim dl_status As Integer = 0
     Dim time As Double
+    Dim log As String = ""
 
     Dim Library As ZGMLibrary.ZGMLibrary
     Dim Config As ZGMLibrary.ZGMConfig
@@ -291,7 +292,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         Dim speedtimer As New Stopwatch
         Dim currentspeed As Double = -1
         Dim readings As Integer = 0
-
+        time = 1.0
         Do
 
             If BackgroundWorker1.CancellationPending Then 'If user abort download
@@ -305,6 +306,7 @@ ByVal KeyName As String, ByVal TheValue As String)
 
             nRead += bytesread
 
+            BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), nRead / length * 100, nRead / (time * 102.4), nRead, length)
             'Me.Invoke(safedelegate, length, nRead, currentspeed, filename)
 
             If bytesread = 0 Then Exit Do
@@ -321,6 +323,7 @@ ByVal KeyName As String, ByVal TheValue As String)
             End If
         Loop
 
+
         'Close the streams
         theResponse.GetResponseStream.Close()
         writeStream.Close()
@@ -336,9 +339,9 @@ ByVal KeyName As String, ByVal TheValue As String)
             Exit Sub
 
         End If
-        If (filename = "zgmlaunch.zip" Or filename = server_file_name + "\.clean\clean.zip" Or filename = server_file_name + "\.bigpatch\patch.zip" Or InStr(filename, server_file_name + "\.bigpatch\")) Then
-            unzip(filename)
-        End If
+        'If (filename = "zgmlaunch.zip" Or filename = server_file_name + "\.clean\clean.zip" Or filename = server_file_name + "\.bigpatch\patch.zip" Or InStr(filename, server_file_name + "\.bigpatch\")) Then
+        '    unzip(filename)
+        'End If
     End Sub
     Private Sub dl2(ByVal url, ByVal filename)
         dl_status = 0
@@ -547,7 +550,7 @@ ByVal KeyName As String, ByVal TheValue As String)
                 'Check md5
                 If md5_this <> md5f Then
                     'Download new file
-                    dl2(server + "game" + "/" + path_file + "/" + fn, server_file_name + "\" + path_file + "\" + fn)
+                    dl(server + "game" + "/" + path_file + "/" + fn, server_file_name + "\" + path_file + "\" + fn)
                     If errorcheck = "1" Then
                         MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
                         Exit Sub
@@ -560,7 +563,7 @@ ByVal KeyName As String, ByVal TheValue As String)
                         Directory.CreateDirectory(MyPath & server_file_name + "\" + path_file)
                     End If
                 End If
-                dl2(server + "game" + "/" + path_file + "/" + fn, server_file_name + "\" + path_file + "\" + fn)
+                dl(server + "game" + "/" + path_file + "/" + fn, server_file_name + "\" + path_file + "\" + fn)
                 If errorcheck = "1" Then
                     MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
                     Exit Sub
@@ -641,7 +644,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         Me.WindowState = FormWindowState.Normal
     End Sub
     Private Sub GameLog(ByVal text As String)
-        RichTextBox1.AppendText(vbLf)
+        'RichTextBox1.AppendText(vbLf)
         RichTextBox1.AppendText(" " & text)
         RichTextBox1.SelectionStart = RichTextBox1.Text.Length
         RichTextBox1.ScrollToCaret()
@@ -653,27 +656,25 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
     Private Sub ProcDataReceived(ByVal sender As System.Object, ByVal d As DataReceivedEventArgs)
         Try
-            If InvokeRequired And Not d.Data.Contains("Unable to play unknown soundEvent: minecraft:none") Then
-                Invoke(New GameLogSafe(AddressOf GameLog), d.Data)
-                Thread.Sleep(10)
+            If Not d.Data.Contains("Unable to play unknown soundEvent: minecraft:none") Then
+                log &= vbLf & d.Data
             End If
-        Catch ex As Exception
+        Catch
 
         End Try
-        'BeginInvoke(New GameLogSafe(AddressOf GameLog), d.Data)
+
     End Sub
     Private Sub GameExited()
-        If t1.IsAlive Or t1.IsThreadPoolThread Then
-            If Not proc.HasExited Then
-                proc.Kill()
+        Try
+            If t1.IsAlive Or t1.IsThreadPoolThread Then
+                If Not proc.HasExited Then
+                    proc.Kill()
+                End If
+                t1.Abort()
             End If
-            t1.Abort()
-        End If
-        'RichTextBox1.BringToFront()
-        'RichTextBox1.Visible = False
-        'Me.Show()
-        'Me.WindowState = FormWindowState.Normal
-        'Label2.Text = "Status : Ready"
+        Catch
+
+        End Try
     End Sub
 
     Private Sub RunGame()
@@ -689,7 +690,6 @@ ByVal KeyName As String, ByVal TheValue As String)
             End If
             If Not t1.IsAlive Then
                 Label2.Text = "Status : Starting game..."
-                'Hide_Form1()
                 RichTextBox1.BringToFront()
                 RichTextBox1.Visible = True
                 t1 = New Threading.Thread(AddressOf RunGameCommand)
@@ -717,6 +717,7 @@ ByVal KeyName As String, ByVal TheValue As String)
 
         Try
             AddHandler proc.OutputDataReceived, AddressOf ProcDataReceived
+            AddHandler proc.Exited, AddressOf GameExited
             proc.Start()
             proc.BeginOutputReadLine()
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game...")
@@ -730,10 +731,14 @@ ByVal KeyName As String, ByVal TheValue As String)
             '    Thread.Sleep(1)
             'End While
             While Not proc.HasExited
-                Thread.Sleep(100)
+                Thread.Sleep(200)
+                If log <> "" Then
+                    BeginInvoke(New GameLogSafe(AddressOf GameLog), log)
+                End If
+                log = ""
             End While
         Catch ex As Exception
-            'MsgBox(ex.Message())
+            MsgBox(ex.Message())
         End Try
 
 
@@ -753,7 +758,7 @@ ByVal KeyName As String, ByVal TheValue As String)
                     BackgroundWorker1.RunWorkerAsync()
                 End If
             Else
-                MsgBox("No internet connect, start in offline mode")
+                MsgBox("No internet connect, starting in offline mode.")
                 RunGame()
             End If
         End If

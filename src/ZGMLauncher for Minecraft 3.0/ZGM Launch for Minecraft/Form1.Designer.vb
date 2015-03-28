@@ -231,6 +231,7 @@ Partial Class Form1
         '
         Me.RichTextBox1.Location = New System.Drawing.Point(1, 32)
         Me.RichTextBox1.Name = "RichTextBox1"
+        Me.RichTextBox1.ReadOnly = True
         Me.RichTextBox1.Size = New System.Drawing.Size(711, 327)
         Me.RichTextBox1.TabIndex = 16
         Me.RichTextBox1.Text = ""
