@@ -151,7 +151,7 @@ Module Game
     Public Function CheckForInternetConnection() As Boolean
         Try
             Using client = New WebClient()
-                Using stream = client.OpenRead("http://www.google.com")
+                Using stream = client.OpenRead("http://enjoyprice.in.th")
                     Return True
                 End Using
             End Using

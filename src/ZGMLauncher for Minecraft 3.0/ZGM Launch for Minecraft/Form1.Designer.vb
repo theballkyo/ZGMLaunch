@@ -43,6 +43,7 @@ Partial Class Form1
         Me.Label6 = New System.Windows.Forms.Label()
         Me.Username = New System.Windows.Forms.TextBox()
         Me.RichTextBox1 = New System.Windows.Forms.RichTextBox()
+        Me.remember = New System.Windows.Forms.CheckBox()
         Me.SuspendLayout()
         '
         'BackgroundWorker1
@@ -209,11 +210,11 @@ Partial Class Form1
         '
         Me.Label6.AutoSize = True
         Me.Label6.BackColor = System.Drawing.Color.Transparent
-        Me.Label6.Font = New System.Drawing.Font("Comic Sans MS", 9.5!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.Label6.Font = New System.Drawing.Font("Comic Sans MS", 11.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Label6.ForeColor = System.Drawing.Color.FromArgb(CType(CType(255, Byte), Integer), CType(CType(128, Byte), Integer), CType(CType(0, Byte), Integer))
-        Me.Label6.Location = New System.Drawing.Point(511, 163)
+        Me.Label6.Location = New System.Drawing.Point(474, 155)
         Me.Label6.Name = "Label6"
-        Me.Label6.Size = New System.Drawing.Size(109, 19)
+        Me.Label6.Size = New System.Drawing.Size(125, 21)
         Me.Label6.TabIndex = 13
         Me.Label6.Text = "Enter Username"
         '
@@ -221,10 +222,10 @@ Partial Class Form1
         '
         Me.Username.Font = New System.Drawing.Font("Comic Sans MS", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Username.ForeColor = System.Drawing.Color.FromArgb(CType(CType(255, Byte), Integer), CType(CType(128, Byte), Integer), CType(CType(0, Byte), Integer))
-        Me.Username.Location = New System.Drawing.Point(515, 185)
+        Me.Username.Location = New System.Drawing.Point(468, 184)
         Me.Username.MaxLength = 16
         Me.Username.Name = "Username"
-        Me.Username.Size = New System.Drawing.Size(155, 30)
+        Me.Username.Size = New System.Drawing.Size(141, 30)
         Me.Username.TabIndex = 15
         '
         'RichTextBox1
@@ -237,6 +238,19 @@ Partial Class Form1
         Me.RichTextBox1.Text = ""
         Me.RichTextBox1.Visible = False
         '
+        'remember
+        '
+        Me.remember.AutoSize = True
+        Me.remember.BackColor = System.Drawing.Color.Transparent
+        Me.remember.Font = New System.Drawing.Font("Comic Sans MS", 9.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.remember.ForeColor = System.Drawing.Color.FromArgb(CType(CType(255, Byte), Integer), CType(CType(128, Byte), Integer), CType(CType(0, Byte), Integer))
+        Me.remember.Location = New System.Drawing.Point(615, 188)
+        Me.remember.Name = "remember"
+        Me.remember.Size = New System.Drawing.Size(91, 23)
+        Me.remember.TabIndex = 17
+        Me.remember.Text = "Remember"
+        Me.remember.UseVisualStyleBackColor = False
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -244,6 +258,7 @@ Partial Class Form1
         Me.BackColor = System.Drawing.Color.Black
         Me.BackgroundImage = Global.ZGM_Launch_for_Minecraft.My.Resources.Resources.mc21
         Me.ClientSize = New System.Drawing.Size(714, 363)
+        Me.Controls.Add(Me.remember)
         Me.Controls.Add(Me.Username)
         Me.Controls.Add(Me.Label6)
         Me.Controls.Add(Me.Label5)
@@ -290,5 +305,6 @@ Partial Class Form1
     Friend WithEvents Label6 As System.Windows.Forms.Label
     Friend WithEvents Username As System.Windows.Forms.TextBox
     Friend WithEvents RichTextBox1 As System.Windows.Forms.RichTextBox
+    Friend WithEvents remember As System.Windows.Forms.CheckBox
 
 End Class

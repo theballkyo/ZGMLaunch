@@ -35,6 +35,10 @@ Public Class Form1
 
     Dim t1 As New Threading.Thread(AddressOf RunGameCommand)
 
+    Const DIR_SV As Integer = 0
+    Const MCNAME As Integer = 1
+    Const REMEMBER_MCNAME As Integer = 2
+
     Public Shared ProgramFilesPath As String = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) & "\"
     Public Shared appdata As String = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
     Public Shared MyPath As String = Application.StartupPath + "\"
@@ -420,23 +424,19 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
-        WebBrowser1.Navigate(server & "patchnews2.htm?ver=" & CLng(DateTime.UtcNow.Subtract(New DateTime(1970, 1, 1)).TotalMilliseconds))
-        AddHandler WebBrowser1.DocumentCompleted, New WebBrowserDocumentCompletedEventHandler(AddressOf PageWaiter)
-        'Label1.Text = New System.Text.UTF7Encoding().GetString(Convert.FromBase64String("qTIwMTIgWkdNTGF1bmNoIDEuMC4yIERldmVsb3BlZCBieSBUaGViYWxsa3lv"))
-        Label3.Text = ""
-        Label4.Text = ""
-        Label1.Text = "© ZGMLauncher " + My.Settings.fullversion + " :: ZGMLibrary " + ZGM.GetVersion() + " Dev by Theballkyo"
-        'Loadsetting()
-        Me.Text = "ZGMLaunch :: Version " + My.Settings.fullversion + " - Debug"
+        Loadsetting()
         'ZGM.LockFile(MyPath & server_file_name)
+
     End Sub
     Private Sub valini(ByRef keyname, ByRef keyvalue)
-        keyname(1) = "DirServer"
-        keyname(2) = "title"
-        keyname(3) = "dlserver"
-        keyname(4) = "UrlAuth"
-        keyname(5) = "UrlNews"
-        keyname(6) = "OpenAuth"
+        'keyname(1) = "DirServer"
+        'keyname(2) = "title"
+        'keyname(3) = "dlserver"
+        'keyname(4) = "UrlAuth"
+        'keyname(5) = "UrlNews"
+        'keyname(6) = "OpenAuth"
+        keyname(MCNAME) = "McName"
+        keyname(REMEMBER_MCNAME) = "Remember"
         ReadINIFile(MyPath + "config.ini", "client", keyname, keyvalue)
         'ReadINIFile(path + "server.ini", "server", keyname, keyvaluesv)
     End Sub
@@ -450,37 +450,47 @@ ByVal KeyName As String, ByVal TheValue As String)
         '@keyvalue(6) = "OpenAuth"
         valini(keyname, keyvalue)
         'server_file_name = keyvalue(1)
-        Me.Text = keyvalue(2) + " :: Version " + My.Settings.fullversion
+        'Me.Text = keyvalue(2) + " :: Version " + My.Settings.fullversion
         'server = keyvalue(3)
-        UrlAuth = keyvalue(4)
+        'UrlAuth = keyvalue(4)
         'If keyvalue(5) = "" Then
         '    WebBrowser1.Navigate("http://mc.zone-gamer.th.ht/freelauncher")
         'Else
         '    WebBrowser1.Navigate(keyvalue(5))
         'End If
+
+        If keyvalue(REMEMBER_MCNAME) Then
+            remember.Checked = True
+            Username.Text = keyvalue(MCNAME)
+        End If
+
+        WebBrowser1.Navigate(server & "patchnews2.htm?ver=" & CLng(DateTime.UtcNow.Subtract(New DateTime(1970, 1, 1)).TotalMilliseconds))
+        AddHandler WebBrowser1.DocumentCompleted, New WebBrowserDocumentCompletedEventHandler(AddressOf PageWaiter)
+
+        Label3.Text = ""
+        Label4.Text = ""
+        Me.Text = "ZGMLaunch :: Version " + My.Settings.fullversion + " :: Build date " + ZGMLibrary.ZGMLibrary.RetrieveLinkerTimestamp(MyPath & "ZGM Launch for Minecraft.exe")
+        Label1.Text = "© ZGMLauncher " + My.Settings.fullversion + " :: ZGMLibrary " + ZGM.GetVersion() + " Dev by Theballkyo"
     End Sub
 
     Private Sub startgame_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles startgame.Click
-        'RunGame()
-        'Return
-        'If File.Exists(path & "server.ini") Then
-        'File.Delete(path & "server.ini")
-        'End If
+        Runsystem()
+    End Sub
+
+    Private Sub Runsystem()
         startgame.Enabled = False
-        'dlgame.Enabled = False
-        'valini(keyname, keyvalue, keyvaluesv)
+
         Timer1.Start()
         Me.Label2.Text = "Status : Checking internet connection"
-        If My.Computer.Network.Ping("www.google.com") Then
+        If My.Computer.Network.Ping("www.enjoyprice.in.th") Then
             If BackgroundWorker1.IsBusy <> True Then
                 Me.Label2.Text = "Status : Downloading patchlist"
                 BackgroundWorker1.RunWorkerAsync()
             End If
         Else
-            MsgBox("No internet connect, start in offline mode")
+            MsgBox("Can't connect to server, start in offline mode")
             RunGame()
         End If
-
     End Sub
 
     Private Sub PageWaiter(ByVal sender As Object, ByVal e As WebBrowserDocumentCompletedEventArgs)
@@ -681,6 +691,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         If Username.TextLength < 3 Or Username.TextLength > 16 Then
             MsgBox("Username must be 3-16 character")
             Label2.Text = "Status : Username not correct."
+            resetui()
         Else
             If Not Directory.Exists(gamePath & "assets") Then
                 Label2.Text = "Status : Copying Assets..."
@@ -692,10 +703,14 @@ ByVal KeyName As String, ByVal TheValue As String)
                 Label2.Text = "Status : Starting game..."
                 RichTextBox1.BringToFront()
                 RichTextBox1.Visible = True
+                'Save McName
+                If keyvalue(REMEMBER_MCNAME) = 1 Then
+                    INIWrite(MyPath & "config.ini", "client", "McName", Username.Text)
+                End If
                 t1 = New Threading.Thread(AddressOf RunGameCommand)
                 t1.Start()
             End If
-        End If
+            End If
     End Sub
 
     Private Sub RunGameCommand()
@@ -723,7 +738,7 @@ ByVal KeyName As String, ByVal TheValue As String)
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game...")
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Javapath = " & javaPath & "\bin\javaw.exe")
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Java Bit = " & Game.getJavaBit("1.8"))
-            BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, gamePath_, Username.Text, "1.8"))
+            'BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, gamePath_, Username.Text, "1.8"))
             'While proc.StandardOutput.Peek() > -1
             '    Dim t = proc.StandardOutput.ReadLine()
             '    BeginInvoke(New GameLogSafe(AddressOf GameLog), proc.StandardOutput.ReadLine())
@@ -738,7 +753,7 @@ ByVal KeyName As String, ByVal TheValue As String)
                 log = ""
             End While
         Catch ex As Exception
-            MsgBox(ex.Message())
+            'MsgBox(ex.Message())
         End Try
 
 
@@ -750,21 +765,15 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
     Private Sub Enter_Start(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles Username.KeyDown
         If e.KeyCode = Keys.Enter Then
-            startgame.Enabled = False
-            Me.Label2.Text = "Status : Checking internet connection"
-            If My.Computer.Network.Ping("www.google.com") Then
-                If BackgroundWorker1.IsBusy <> True Then
-                    Me.Label2.Text = "Status : Downloading patchlist"
-                    BackgroundWorker1.RunWorkerAsync()
-                End If
-            Else
-                MsgBox("No internet connect, starting in offline mode.")
-                RunGame()
-            End If
+            Runsystem()
         End If
     End Sub
+
+    Private Sub remember_CheckedChanged(sender As Object, e As EventArgs) Handles remember.CheckedChanged
+        INIWrite(MyPath & "config.ini", "client", "Remember", 1)
+        If Not remember.Checked Then
+            INIWrite(MyPath & "config.ini", "client", "Remember", 0)
+        End If
+
+    End Sub
 End Class
-
-
-
-

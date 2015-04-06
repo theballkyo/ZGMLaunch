@@ -3,22 +3,28 @@ Imports System.Xml
 Imports System.Text.RegularExpressions
 
 Public Class ZGMLibrary
-    Public Shared Function GetJavaVersion() As String
+    Public Shared Function RetrieveLinkerTimestamp(ByVal filePath As String) As DateTime
+        Const PeHeaderOffset As Integer = 60
+        Const LinkerTimestampOffset As Integer = 8
+
+        Dim b(2047) As Byte
+        Dim s As Stream
         Try
-            Dim procStartInfo As New System.Diagnostics.ProcessStartInfo("java", "-version ")
-            procStartInfo.RedirectStandardOutput = True
-            procStartInfo.RedirectStandardError = True
-            procStartInfo.UseShellExecute = False
-            procStartInfo.CreateNoWindow = True
-            Dim proc As System.Diagnostics.Process = New Process()
-            proc.StartInfo = procStartInfo
-            proc.Start()
-            Dim digits() As String = Regex.Split(proc.StandardError.ReadLine(), """")
-            Return digits(1)
-        Catch objException As Exception
-            Return Nothing
+            s = New FileStream(filePath, FileMode.Open, FileAccess.Read)
+            s.Read(b, 0, 2048)
+        Finally
+            If Not s Is Nothing Then s.Close()
         End Try
+
+        Dim i As Integer = BitConverter.ToInt32(b, PeHeaderOffset)
+
+        Dim SecondsSince1970 As Integer = BitConverter.ToInt32(b, i + LinkerTimestampOffset)
+        Dim dt As New DateTime(1970, 1, 1, 0, 0, 0)
+        dt = dt.AddSeconds(SecondsSince1970)
+        dt = dt.AddHours(TimeZone.CurrentTimeZone.GetUtcOffset(dt).Hours)
+        Return dt
     End Function
+
     Shared Function XmlPatchRead(ByVal filename As String, ByRef file_data(,) As String)
         Dim i = 0
         Dim m_xmlr As XmlTextReader
