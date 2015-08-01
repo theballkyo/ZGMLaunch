@@ -9,6 +9,7 @@ Imports ZGMLaunch
 Imports System.Text.RegularExpressions
 Imports System.Drawing.Text
 Imports Microsoft.Win32
+Imports Newtonsoft.Json.Linq
 
 Public Class Form1
     Dim keyvalue(10) As String
@@ -24,8 +25,11 @@ Public Class Form1
     Dim server As String = "http://enjoyprice.in.th/mc/patch/" 'Old website :(
     Dim wc As WebClient = New WebClient
     Dim dl_status As Integer = 0
+    Dim current_delay = 0
+    Dim count_delay = 0
     Dim time As Double
     Dim log As String = ""
+    Dim startGameVer As String = "180forge"
 
     Dim Library As ZGMLibrary.ZGMLibrary
     Dim Config As ZGMLibrary.ZGMConfig
@@ -38,6 +42,13 @@ Public Class Form1
     Const DIR_SV As Integer = 0
     Const MCNAME As Integer = 1
     Const REMEMBER_MCNAME As Integer = 2
+    Const DLSERVER As Integer = 3
+
+    '3,0 = zgmversion ; 0,i = path ; 1,i = filename ; 2,i = md5
+    Public Const XML_ZGMVER As Integer = 3
+    Public Const XML_FILE As Integer = 1
+    Public Const XML_MD5 As Integer = 2
+    Public Const XML_ As Integer = 0
 
     Public Shared ProgramFilesPath As String = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) & "\"
     Public Shared appdata As String = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
@@ -52,6 +63,7 @@ Public Class Form1
     Delegate Sub ChangeStatusSafe(ByVal text As String)
     Delegate Sub DownloadCompleteSafe(ByVal cancelled As Boolean)
     Delegate Sub showform()
+    Delegate Sub SelectVersionSafe()
     Delegate Sub GameLogSafe(ByVal text As String)
     Delegate Sub GameExitedSafe()
     Private Declare Unicode Function WritePrivateProfileString Lib "kernel32" _
@@ -160,7 +172,12 @@ ByVal KeyName As String, ByVal TheValue As String)
 
         'Dim safeDelegate As New change_textSafe(AddressOf change_text)
         'Me.Invoke(safeDelegate, percentage, speed, bytesIn, totalBytes)
-        BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), percentage, speed, bytesIn, totalBytes)
+        If current_delay < count_delay Then
+            BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), percentage, speed, bytesIn, totalBytes)
+            current_delay = count_delay
+        End If
+
+        ' Thread.Sleep(50)
     End Sub
 
     Private Sub client_DownloadCompleted(ByVal sender As Object, ByVal e As System.ComponentModel.AsyncCompletedEventArgs)
@@ -171,6 +188,8 @@ ByVal KeyName As String, ByVal TheValue As String)
             BackgroundWorker1.CancelAsync()
         End If
         'BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), 0, 0, 0, 0)
+        BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), 100, 0, 100, 100)
+        BeginInvoke(New ChangeStatusSafe(AddressOf ChangeStatus), "Status : Checking file ...")
     End Sub
 
     Private Sub DownloadText(ByVal percentage As Double, ByVal speed As Double, ByVal bytesIn As Double, ByVal totalBytes As Double)
@@ -269,7 +288,8 @@ ByVal KeyName As String, ByVal TheValue As String)
 
             MessageBox.Show("เกิดข้อผิดพลาดขณะ download file. Possibe causes:" & ControlChars.CrLf & _
                             "1) ไม่มีไฟล์ในเซิฟเวอร์" & ControlChars.CrLf & _
-                            "2) เซิฟเวอร์ทำงานผิดพลาด(อาจล่มอยู่)", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                            "2) เซิฟเวอร์ทำงานผิดพลาด(อาจล่มอยู่)" & ControlChars.CrLf & _
+                            "3) File = " & filename & urlfile, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 
             Dim cancelDelegate As New DownloadCompleteSafe(AddressOf DownloadComplete)
 
@@ -305,9 +325,8 @@ ByVal KeyName As String, ByVal TheValue As String)
 
             speedtimer.Start()
 
-            Dim readBytes(4095) As Byte
-            Dim bytesread As Integer = theResponse.GetResponseStream.Read(readBytes, 0, 4096)
-
+            Dim readBytes(4096) As Byte
+            Dim bytesread As Integer = theResponse.GetResponseStream.Read(readBytes, 0, 4095)
             nRead += bytesread
 
             BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), nRead / length * 100, nRead / (time * 102.4), nRead, length)
@@ -325,6 +344,7 @@ ByVal KeyName As String, ByVal TheValue As String)
                 speedtimer.Reset()
                 readings = 0
             End If
+            'Thread.Sleep(50)
         Loop
 
 
@@ -352,6 +372,9 @@ ByVal KeyName As String, ByVal TheValue As String)
         AddHandler wc.DownloadProgressChanged, AddressOf client_ProgressChanged
         AddHandler wc.DownloadFileCompleted, AddressOf client_DownloadCompleted
         time = 0
+        While wc.IsBusy = True
+
+        End While
         'wc.DownloadFileAsync(New Uri(url), MyPath + filename)
         wc.DownloadFileAsync(New Uri(url), MyPath + filename)
         While dl_status = 0
@@ -437,6 +460,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         'keyname(6) = "OpenAuth"
         keyname(MCNAME) = "McName"
         keyname(REMEMBER_MCNAME) = "Remember"
+        keyname(DLSERVER) = "DLserver"
         ReadINIFile(MyPath + "config.ini", "client", keyname, keyvalue)
         'ReadINIFile(path + "server.ini", "server", keyname, keyvaluesv)
     End Sub
@@ -448,7 +472,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         '@keyvalue(4) = "UrlAuth"
         '@keyvalue(5) = "UrlNews"
         '@keyvalue(6) = "OpenAuth"
-        valini(keyname, keyvalue)
+
         'server_file_name = keyvalue(1)
         'Me.Text = keyvalue(2) + " :: Version " + My.Settings.fullversion
         'server = keyvalue(3)
@@ -458,11 +482,33 @@ ByVal KeyName As String, ByVal TheValue As String)
         'Else
         '    WebBrowser1.Navigate(keyvalue(5))
         'End If
+        If File.Exists(MyPath & "config.ini") <> True Then
+            File.Create(MyPath & "config.ini").Close()
+            INIWrite(MyPath & "config.ini", "client", "McName", "user")
+            INIWrite(MyPath & "config.ini", "client", "Remember", "1")
+            INIWrite(MyPath & "config.ini", "client", "DLserver", "http://sv1.enjoyprice.in.th/mc/patch/")
+        End If
+
+        valini(keyname, keyvalue)
+
+        If keyvalue(MCNAME) = "" Then
+            INIWrite(MyPath & "config.ini", "client", "McName", "user")
+        End If
+        If keyvalue(REMEMBER_MCNAME) = "" Then
+            INIWrite(MyPath & "config.ini", "client", "Remember", "1")
+        End If
+        If keyvalue(DLSERVER) = "" Then
+            INIWrite(MyPath & "config.ini", "client", "DLserver", "http://sv1.enjoyprice.in.th/mc/patch/")
+        End If
+
+        valini(keyname, keyvalue)
 
         If keyvalue(REMEMBER_MCNAME) Then
             remember.Checked = True
             Username.Text = keyvalue(MCNAME)
         End If
+
+        server = keyvalue(DLSERVER)
 
         WebBrowser1.Navigate(server & "patchnews2.htm?ver=" & CLng(DateTime.UtcNow.Subtract(New DateTime(1970, 1, 1)).TotalMilliseconds))
         AddHandler WebBrowser1.DocumentCompleted, New WebBrowserDocumentCompletedEventHandler(AddressOf PageWaiter)
@@ -474,23 +520,25 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
 
     Private Sub startgame_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles startgame.Click
-        Runsystem()
+        SelectVersion.Show()
     End Sub
 
-    Private Sub Runsystem()
-        startgame.Enabled = False
+    Public Shared Sub Runsystem()
+        Form1.startgame.Enabled = False
 
-        Timer1.Start()
-        Me.Label2.Text = "Status : Checking internet connection"
-        If My.Computer.Network.Ping("www.enjoyprice.in.th") Then
-            If BackgroundWorker1.IsBusy <> True Then
-                Me.Label2.Text = "Status : Downloading patchlist"
-                BackgroundWorker1.RunWorkerAsync()
+        Form1.Timer1.Start()
+        Form1.Label2.Text = "Status : Checking internet connection"
+        Try
+            My.Computer.Network.Ping("www.enjoyprice.in.th")
+            If Form1.BackgroundWorker1.IsBusy <> True Then
+                Form1.Label2.Text = "Status : Downloading patchlist"
+                Form1.BackgroundWorker1.RunWorkerAsync()
             End If
-        Else
+        Catch
             MsgBox("Can't connect to server, start in offline mode")
-            RunGame()
-        End If
+            Form1.RunGame()
+        End Try
+
     End Sub
 
     Private Sub PageWaiter(ByVal sender As Object, ByVal e As WebBrowserDocumentCompletedEventArgs)
@@ -517,12 +565,101 @@ ByVal KeyName As String, ByVal TheValue As String)
         ZGM.UpdateXML(server)
 
         'valini(keyname, keyvalue, keyvaluesv)
-        dl2(server & "zgm_patch.xml", "patchlist.xml")
-        If errorcheck = "1" Then
-            MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
-            Exit Sub
-        End If
-        Check_File()
+        'dl2(server & "zgm_patch.xml", "patchlist.xml")
+        'If errorcheck = "1" Then
+        'MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
+        'Exit Sub
+        'End If
+        NewCheckFile()
+    End Sub
+
+    Public Sub NewCheckFile()
+        BeginInvoke(New ChangeStatusSafe(AddressOf ChangeStatus), "Status : Checking file ...")
+        dl2(server & "zgm_list.json", "patchlist.json")
+        Dim json As String = File.ReadAllText(MyPath & "patchlist.json")
+        Dim ser As JObject = JObject.Parse(json)
+        Dim data As List(Of JToken) = ser.Children().ToList
+        Dim output As String = ""
+        For Each item As JProperty In data
+            item.CreateReader()
+            Select Case item.Name
+                Case "version"
+                    If My.Settings.version < Convert.ToInt16(item.Value) Then
+                        dl2(server & "zgmlaunch.zip", "zgmlaunch.zip")
+                        unzip("zgmlaunch.zip")
+                    End If
+                Case "files"
+                    For Each file_ As JObject In item.Values
+                        Dim name As String = file_("name") '/
+                        Dim md5 As String = file_("md5")
+
+                        'MsgBox(path_file)
+                        Dim full_path_file_local As String = server_file_name + "\" + name.Replace("/", "\")
+                        Dim full_path_file_dl As String = server & "game" & "/" & name
+
+                        Dim p() As String = name.Split("/")
+                        fn = p.GetValue(p.Length - 1)
+                        Array.Resize(p, p.Length - 1)
+
+                        Dim path_file As String = MyPath + server_file_name + "\" + Join(p, "\")
+
+                        Path.Combine(full_path_file_local)
+
+                        If File.Exists(full_path_file_local) Then
+                            If ZGM.CalcMD5(full_path_file_local).ToLower <> md5.ToLower Then
+                                dl2(full_path_file_dl, full_path_file_local)
+                                If errorcheck = "1" Then
+                                    MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
+                                    Exit Sub
+                                End If
+                            End If
+                        Else
+                            If path_file <> "" Then
+                                If Not Directory.Exists(path_file) Then
+                                    Directory.CreateDirectory(path_file)
+                                End If
+                            End If
+                            dl2(full_path_file_dl, full_path_file_local)
+                            If errorcheck = "1" Then
+                                MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
+                                Exit Sub
+                            End If
+                        End If
+                    Next
+                Case "gameversion"
+                    startGameVer = item.Value
+            End Select
+        Next
+
+        ' Sync mods files
+        Dim modsFiles = IO.Directory.GetFiles(server_file_name & "\mods", "*.*", SearchOption.AllDirectories)
+        dl2(server & "modslist.json", "modslist.json")
+        json = File.ReadAllText(MyPath & "modslist.json")
+        ser = JObject.Parse(json)
+        data = ser.Children().ToList
+        Dim is_del = False
+
+        For Each modsfile As String In modsFiles
+            is_del = True
+            For Each item As JProperty In data
+                item.CreateReader()
+                If item.Name = "files" Then
+                    For Each file_ As JObject In item.Values
+                        Dim name As String = file_("name")
+                        Dim full_path_file As String = server_file_name + "\mods\" + name.Replace("/", "\")
+                        ' MsgBox(modsfile & " : " & full_path_file)
+                        If modsfile = full_path_file Then
+                            is_del = False
+                            Exit For
+                        End If
+                    Next
+                End If
+            Next
+            If is_del Then
+                File.Delete(modsfile)
+            End If
+        Next
+
     End Sub
     Public Sub Check_File()
         BeginInvoke(New ChangeStatusSafe(AddressOf ChangeStatus), "Status : Checking file ...")
@@ -543,7 +680,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         ' Loop over all elements.
 
         For i As Integer = 0 To bound1
-            '0,3 = zgmversion ; 0,i = path ; 1,i = filename ; 2,i = md5
+            '3,0 = zgmversion ; 0,i = path ; 1,i = filename ; 2,i = md5
             path_file = file_data(0, i)
             fn = file_data(1, i)
             md5f = file_data(2, i)
@@ -588,6 +725,7 @@ ByVal KeyName As String, ByVal TheValue As String)
             Me.Label2.Text = "Status : การทำงานถูกยกเลิกโดยผู้ใช้ !"
         ElseIf e.Error IsNot Nothing Then
             Me.Label2.Text = "Status : มีความผิดพลาด " & e.Error.Message
+            MsgBox(e.Error.Message, MsgBoxStyle.Critical)
 
             'Download error
         ElseIf errorcheck = "1" Then
@@ -599,12 +737,11 @@ ByVal KeyName As String, ByVal TheValue As String)
             'No Error ?
         Else
             Me.Label2.Text = "Status : Ready!"
+            RunGame()
             'Dim formshow As New showform(AddressOf showf)
             'Me.Invoke(formshow)
         End If
         resetui()
-
-        RunGame()
 
     End Sub
 
@@ -710,18 +847,36 @@ ByVal KeyName As String, ByVal TheValue As String)
                 t1 = New Threading.Thread(AddressOf RunGameCommand)
                 t1.Start()
             End If
-            End If
+        End If
     End Sub
 
     Private Sub RunGameCommand()
-        Dim command = "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xmx1G -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=" & gamePath & "versions\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332\1.8-LiteLoader1.8-1.8-Forge11.14.1.1332-natives-475500669532385 -cp " & gamePath & "libraries\com\mumfrey\liteloader\1.8\liteloader-1.8.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\net\minecraftforge\forge\1.8-11.14.1.1332\forge-1.8-11.14.1.1332.jar;" & gamePath & "libraries\net\minecraft\launchwrapper\1.11\launchwrapper-1.11.jar;" & gamePath & "libraries\org\ow2\asm\asm-all\5.0.3\asm-all-5.0.3.jar;" & gamePath & "libraries\com\typesafe\akka\akka-actor_2.11\2.3.3\akka-actor_2.11-2.3.3.jar;" & gamePath & "libraries\com\typesafe\config\1.2.1\config-1.2.1.jar;" & gamePath & "libraries\org\scala-lang\scala-actors-migration_2.11\1.1.0\scala-actors-migration_2.11-1.1.0.jar;" & gamePath & "libraries\org\scala-lang\scala-compiler\2.11.1\scala-compiler-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-library_2.11\1.0.2\scala-continuations-library_2.11-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\plugins\scala-continuations-plugin_2.11.1\1.0.2\scala-continuations-plugin_2.11.1-1.0.2.jar;" & gamePath & "libraries\org\scala-lang\scala-library\2.11.1\scala-library-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-parser-combinators_2.11\1.0.1\scala-parser-combinators_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-reflect\2.11.1\scala-reflect-2.11.1.jar;" & gamePath & "libraries\org\scala-lang\scala-swing_2.11\1.0.1\scala-swing_2.11-1.0.1.jar;" & gamePath & "libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar;" & gamePath & "libraries\lzma\lzma\0.0.1\lzma-0.0.1.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.5\jopt-simple-4.5.jar;" & gamePath & "libraries\java3d\vecmath\1.5.2\vecmath-1.5.2.jar;" & gamePath & "libraries\net\sf\trove4j\trove4j\3.0.3\trove4j-3.0.3.jar;" & gamePath & "libraries\com\ibm\icu\icu4j-core-mojang\51.2\icu4j-core-mojang-51.2.jar;" & gamePath & "libraries\net\sf\jopt-simple\jopt-simple\4.6\jopt-simple-4.6.jar;" & gamePath & "libraries\com\paulscode\codecjorbis\20101023\codecjorbis-20101023.jar;" & gamePath & "libraries\com\paulscode\codecwav\20101023\codecwav-20101023.jar;" & gamePath & "libraries\com\paulscode\libraryjavasound\20101123\libraryjavasound-20101123.jar;" & gamePath & "libraries\com\paulscode\librarylwjglopenal\20100824\librarylwjglopenal-20100824.jar;" & gamePath & "libraries\com\paulscode\soundsystem\20120107\soundsystem-20120107.jar;" & gamePath & "libraries\io\netty\netty-all\4.0.15.Final\netty-all-4.0.15.Final.jar;" & gamePath & "libraries\com\google\guava\guava\17.0\guava-17.0.jar;" & gamePath & "libraries\org\apache\commons\commons-lang3\3.3.2\commons-lang3-3.3.2.jar;" & gamePath & "libraries\commons-io\commons-io\2.4\commons-io-2.4.jar;" & gamePath & "libraries\commons-codec\commons-codec\1.9\commons-codec-1.9.jar;" & gamePath & "libraries\net\java\jinput\jinput\2.0.5\jinput-2.0.5.jar;" & gamePath & "libraries\net\java\jutils\jutils\1.0.0\jutils-1.0.0.jar;" & gamePath & "libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar;" & gamePath & "libraries\com\mojang\authlib\1.5.17\authlib-1.5.17.jar;" & gamePath & "libraries\com\mojang\realms\1.6.1\realms-1.6.1.jar;" & gamePath & "libraries\org\apache\commons\commons-compress\1.8.1\commons-compress-1.8.1.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpclient\4.3.3\httpclient-4.3.3.jar;" & gamePath & "libraries\commons-logging\commons-logging\1.1.3\commons-logging-1.1.3.jar;" & gamePath & "libraries\org\apache\httpcomponents\httpcore\4.3.2\httpcore-4.3.2.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-api\2.0-beta9\log4j-api-2.0-beta9.jar;" & gamePath & "libraries\org\apache\logging\log4j\log4j-core\2.0-beta9\log4j-core-2.0-beta9.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl\2.9.1\lwjgl-2.9.1.jar;" & gamePath & "libraries\org\lwjgl\lwjgl\lwjgl_util\2.9.1\lwjgl_util-2.9.1.jar;" & gamePath & "libraries\tv\twitch\twitch\6.5\twitch-6.5.jar;" & gamePath & "versions\1.8\1.8.jar net.minecraft.launchwrapper.Launch --tweakClass com.mumfrey.liteloader.launch.LiteLoaderTweaker --username " & Username.Text & " --version 1.8 --gameDir " & gamePath_ & " --assetsDir " & gamePath & "assets --assetIndex 1.8 --accessToken myaccesstoken --userProperties {} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker"
-        Dim javaPath As String = Game.getJavaPath("1.8")
+        Dim javaPath As String = ""
         'MsgBox(javaPath & "\bin\javaw.exe")
-        If javaPath = Nothing Or Game.getVerJava() = Nothing Then
-            MsgBox("กรุณาลง Java เวอร์ชั่น 1.8 ขึ้นไป")
-            BeginInvoke(New GameExitedSafe(AddressOf GameExited))
+        'If javaPath = Nothing Or Game.getVerJava() = Nothing Then
+        'MsgBox("กรุณาลง Java เวอร์ชั่น 1.8 ขึ้นไป")
+        'BeginInvoke(New GameExitedSafe(AddressOf GameExited))
+        'End If
+        If Game.checkVerJava("1.8") = Nothing Then
+            If Environment.Is64BitOperatingSystem Then
+                If Not File.Exists(MyPath & "jre1.8.zip") Then
+                    dl2(server & "jre1.8_x64.zip", MyPath & "jre1.8.zip")
+                End If
+                javaPath = MyPath & "jre1.8_x64"
+            Else
+                If Not File.Exists(MyPath & "jre1.8.zip") Then
+                    dl2(server & "jre1.8_x86.zip", MyPath & "jre1.8.zip")
+                End If
+                javaPath = MyPath & "jre1.8_x86"
+            End If
+            If errorcheck = "1" Then
+                BeginInvoke(New GameExitedSafe(AddressOf GameExited))
+            End If
+            unzip("jre1.8.zip")
+        Else
+            javaPath = Game.getJavaPath("1.8")
         End If
-        procStartInfo.Arguments = Game.getCommand(gamePath, gamePath_, Username.Text, "1.8")
+        procStartInfo.Arguments = Game.getCommand(gamePath, gamePath_, Username.Text, SelectVersion.selectVersion)
         procStartInfo.FileName = javaPath & "\bin\javaw.exe"
         procStartInfo.RedirectStandardOutput = True
         procStartInfo.UseShellExecute = False
@@ -738,7 +893,7 @@ ByVal KeyName As String, ByVal TheValue As String)
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Start game...")
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Javapath = " & javaPath & "\bin\javaw.exe")
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Java Bit = " & Game.getJavaBit("1.8"))
-            'BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, gamePath_, Username.Text, "1.8"))
+            BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, gamePath_, Username.Text, SelectVersion.selectVersion))
             'While proc.StandardOutput.Peek() > -1
             '    Dim t = proc.StandardOutput.ReadLine()
             '    BeginInvoke(New GameLogSafe(AddressOf GameLog), proc.StandardOutput.ReadLine())
@@ -765,7 +920,7 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
     Private Sub Enter_Start(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles Username.KeyDown
         If e.KeyCode = Keys.Enter Then
-            Runsystem()
+            SelectVersion.Show()
         End If
     End Sub
 
@@ -775,5 +930,9 @@ ByVal KeyName As String, ByVal TheValue As String)
             INIWrite(MyPath & "config.ini", "client", "Remember", 0)
         End If
 
+    End Sub
+
+    Private Sub delay_Tick(sender As Object, e As EventArgs) Handles delay.Tick
+        count_delay += 1
     End Sub
 End Class

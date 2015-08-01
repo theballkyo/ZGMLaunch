@@ -44,6 +44,7 @@ Partial Class Form1
         Me.Username = New System.Windows.Forms.TextBox()
         Me.RichTextBox1 = New System.Windows.Forms.RichTextBox()
         Me.remember = New System.Windows.Forms.CheckBox()
+        Me.delay = New System.Windows.Forms.Timer(Me.components)
         Me.SuspendLayout()
         '
         'BackgroundWorker1
@@ -251,6 +252,10 @@ Partial Class Form1
         Me.remember.Text = "Remember"
         Me.remember.UseVisualStyleBackColor = False
         '
+        'delay
+        '
+        Me.delay.Enabled = True
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -306,5 +311,6 @@ Partial Class Form1
     Friend WithEvents Username As System.Windows.Forms.TextBox
     Friend WithEvents RichTextBox1 As System.Windows.Forms.RichTextBox
     Friend WithEvents remember As System.Windows.Forms.CheckBox
+    Friend WithEvents delay As System.Windows.Forms.Timer
 
 End Class
