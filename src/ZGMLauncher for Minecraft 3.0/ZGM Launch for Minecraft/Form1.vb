@@ -857,7 +857,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         'MsgBox("กรุณาลง Java เวอร์ชั่น 1.8 ขึ้นไป")
         'BeginInvoke(New GameExitedSafe(AddressOf GameExited))
         'End If
-        If Game.checkVerJava("1.8") = Nothing Then
+        If Game.checkVerJava("1.8") = False Then
             If Environment.Is64BitOperatingSystem Then
                 If Not File.Exists(MyPath & "jre1.8.zip") Then
                     dl2(server & "jre1.8_x64.zip", MyPath & "jre1.8.zip")
@@ -894,12 +894,6 @@ ByVal KeyName As String, ByVal TheValue As String)
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Javapath = " & javaPath & "\bin\javaw.exe")
             BeginInvoke(New GameLogSafe(AddressOf GameLog), "Java Bit = " & Game.getJavaBit("1.8"))
             BeginInvoke(New GameLogSafe(AddressOf GameLog), Game.getCommand(gamePath, gamePath_, Username.Text, SelectVersion.selectVersion))
-            'While proc.StandardOutput.Peek() > -1
-            '    Dim t = proc.StandardOutput.ReadLine()
-            '    BeginInvoke(New GameLogSafe(AddressOf GameLog), proc.StandardOutput.ReadLine())
-            '    proc.StandardOutput.Read()
-            '    Thread.Sleep(1)
-            'End While
             While Not proc.HasExited
                 Thread.Sleep(200)
                 If log <> "" Then
@@ -908,7 +902,6 @@ ByVal KeyName As String, ByVal TheValue As String)
                 log = ""
             End While
         Catch ex As Exception
-            'MsgBox(ex.Message())
         End Try
 
 
