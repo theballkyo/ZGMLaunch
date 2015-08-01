@@ -170,8 +170,6 @@ ByVal KeyName As String, ByVal TheValue As String)
         Dim bytesDownloaded As Long = bytesIn
         Dim speed As Double = bytesDownloaded / (time * 102.4)
 
-        'Dim safeDelegate As New change_textSafe(AddressOf change_text)
-        'Me.Invoke(safeDelegate, percentage, speed, bytesIn, totalBytes)
         If current_delay < count_delay Then
             BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), percentage, speed, bytesIn, totalBytes)
             current_delay = count_delay
@@ -187,7 +185,6 @@ ByVal KeyName As String, ByVal TheValue As String)
             errorcheck = 1
             BackgroundWorker1.CancelAsync()
         End If
-        'BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), 0, 0, 0, 0)
         BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), 100, 0, 100, 100)
         BeginInvoke(New ChangeStatusSafe(AddressOf ChangeStatus), "Status : Checking file ...")
     End Sub
@@ -363,9 +360,6 @@ ByVal KeyName As String, ByVal TheValue As String)
             Exit Sub
 
         End If
-        'If (filename = "zgmlaunch.zip" Or filename = server_file_name + "\.clean\clean.zip" Or filename = server_file_name + "\.bigpatch\patch.zip" Or InStr(filename, server_file_name + "\.bigpatch\")) Then
-        '    unzip(filename)
-        'End If
     End Sub
     Private Sub dl2(ByVal url, ByVal filename)
         dl_status = 0
@@ -385,49 +379,8 @@ ByVal KeyName As String, ByVal TheValue As String)
     Private Sub unzip(ByVal filename)
         'Unzip
         Using zip As ZipFile = ZipFile.Read(MyPath + filename)
-
-            If (filename = server_file_name + "\.clean\clean.zip") Then
-
-                zip.ExtractAll(MyPath + server_file_name + "\.clean\", Ionic.Zip.ExtractExistingFileAction.OverwriteSilently)
-
-                Dim p As New Process
-                p.StartInfo.FileName = MyPath + server_file_name + "\.clean\cleanmain.exe"
-                p.Start()
-                If Not (p Is Nothing) Then
-                    p.WaitForExit()
-                End If
-                Check_File()
-
-            ElseIf (InStr(filename, server_file_name + "\.bigpatch\")) Then
-
-                zip.ExtractAll(MyPath + server_file_name + "\.bigpatch\", Ionic.Zip.ExtractExistingFileAction.OverwriteSilently)
-                Dim p As New Process
-                Dim filename2 As String = Replace(filename, ".zip", ".exe")
-                Dim filepath As String = """" + MyPath + filename2 + """"
-                p.StartInfo.FileName = filepath
-                'p.WaitForExit()
-                p.Start()
-                If Not (p Is Nothing) Then
-                    p.WaitForExit()
-                End If
-            Else
-                zip.ExtractAll(MyPath, Ionic.Zip.ExtractExistingFileAction.OverwriteSilently)
-            End If
-
+            zip.ExtractAll(MyPath, Ionic.Zip.ExtractExistingFileAction.OverwriteSilently)
         End Using
-
-        If (filename = "zgmdl.zip") Then
-            'INIWrite(path & "config.ini", "client", "versionmc", keyvalue(2) + 1)
-            File.Delete(MyPath & "zgmdl.zip")
-            check()
-        End If
-
-        If (filename = "zgmclient.zip") Then
-            'INIWrite(path & "config.ini", "client", "versionmc", keyvaluesv(4))
-            File.Delete(MyPath & "zgmclient.zip")
-            check()
-        End If
-
         If (filename = "zgmlaunch.zip") Then
             'INIWrite(path & "config.ini", "client", "versionlaunch", keyvaluesv(1))
             File.Delete(MyPath & "zgmlaunch.zip")
@@ -435,8 +388,6 @@ ByVal KeyName As String, ByVal TheValue As String)
             Process.Start("update.exe")
             End
         End If
-
-
 
     End Sub
 
@@ -661,64 +612,7 @@ ByVal KeyName As String, ByVal TheValue As String)
         Next
 
     End Sub
-    Public Sub Check_File()
-        BeginInvoke(New ChangeStatusSafe(AddressOf ChangeStatus), "Status : Checking file ...")
-        'MsgBox(CalcMD5((path + "test.xml")))
-        Call xml_read.file_data_xml(MyPath + "patchlist.xml", file_data)
-        ' Get bounds of the array.
-        Dim bound0 As Integer = file_data.GetUpperBound(0)
-        Dim bound1 As Integer = file_data.GetUpperBound(1)
-        'Check program update
-        'Dim zgmversion = file_data(3, 0)
-        'Dim sv_ver As String = ZGM.CheckUpdate(server_file_name)
-        If Regex.IsMatch(file_data(3, 0), "^[0-9]+$") Then
-            If My.Settings.version < file_data(3, 0) Then
-                dl2(server & "zgmlaunch.zip", "zgmlaunch.zip")
-                unzip("zgmlaunch.zip")
-            End If
-        End If
-        ' Loop over all elements.
 
-        For i As Integer = 0 To bound1
-            '3,0 = zgmversion ; 0,i = path ; 1,i = filename ; 2,i = md5
-            path_file = file_data(0, i)
-            fn = file_data(1, i)
-            md5f = file_data(2, i)
-
-            If fn = "" Then
-                Exit For
-            End If
-            'MsgBox(fn + " : " + md5f)
-
-            'check file
-            If File.Exists(MyPath & server_file_name + "\" + path_file + "\" + fn) Then
-                Dim md5_this = ZGM.CalcMD5(MyPath & server_file_name + "\" + path_file + "\" + fn)
-                md5_this = md5_this.ToLower
-                'Check md5
-                If md5_this <> md5f Then
-                    'Download new file
-                    dl(server + "game" + "/" + path_file + "/" + fn, server_file_name + "\" + path_file + "\" + fn)
-                    If errorcheck = "1" Then
-                        MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
-                        Exit Sub
-                    End If
-                End If
-            Else
-                'Download new file
-                If path_file <> "" Then
-                    If Not Directory.Exists(MyPath & server_file_name + "\" + path_file) Then
-                        Directory.CreateDirectory(MyPath & server_file_name + "\" + path_file)
-                    End If
-                End If
-                dl(server + "game" + "/" + path_file + "/" + fn, server_file_name + "\" + path_file + "\" + fn)
-                If errorcheck = "1" Then
-                    MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
-                    Exit Sub
-                End If
-            End If
-        Next
-
-    End Sub
     Private Sub bw1_RunWorkerCompleted(ByVal sender As Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
 
         If e.Cancelled = True Then

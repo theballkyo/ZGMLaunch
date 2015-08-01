@@ -52,7 +52,7 @@ Module Game
             "libraries\org\scala-lang\scala-swing_2.11\1.0.1\scala-swing_2.11-1.0.1.jar",
             "libraries\org\scala-lang\scala-xml_2.11\1.0.2\scala-xml_2.11-1.0.2.jar",
             "libraries\tv\twitch\twitch\6.5\twitch-6.5.jar",
-            "versions\1.8\1.8.jar",
+            "versions\1.8\1.8.jar"
             }
     Dim library_list_180() As String = {
             "libraries\com\google\code\gson\gson\2.2.4\gson-2.2.4.jar",
