@@ -174,7 +174,6 @@ ByVal KeyName As String, ByVal TheValue As String)
             BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), percentage, speed, bytesIn, totalBytes)
             current_delay = count_delay
         End If
-
         ' Thread.Sleep(50)
     End Sub
 
@@ -378,9 +377,13 @@ ByVal KeyName As String, ByVal TheValue As String)
     End Sub
     Private Sub unzip(ByVal filename)
         'Unzip
-        Using zip As ZipFile = ZipFile.Read(MyPath + filename)
-            zip.ExtractAll(MyPath, Ionic.Zip.ExtractExistingFileAction.OverwriteSilently)
-        End Using
+        Try
+            Using zip As ZipFile = ZipFile.Read(MyPath + filename)
+                zip.ExtractAll(MyPath, Ionic.Zip.ExtractExistingFileAction.OverwriteSilently)
+            End Using
+        Catch
+            BeginInvoke(New GameExitedSafe(AddressOf GameExited))
+        End Try
         If (filename = "zgmlaunch.zip") Then
             'INIWrite(path & "config.ini", "client", "versionlaunch", keyvaluesv(1))
             File.Delete(MyPath & "zgmlaunch.zip")
@@ -388,7 +391,6 @@ ByVal KeyName As String, ByVal TheValue As String)
             Process.Start("update.exe")
             End
         End If
-
     End Sub
 
     Private Sub closeme_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles closeme.Click
@@ -559,6 +561,7 @@ ByVal KeyName As String, ByVal TheValue As String)
                         If File.Exists(full_path_file_local) Then
                             If ZGM.CalcMD5(full_path_file_local).ToLower <> md5.ToLower Then
                                 dl2(full_path_file_dl, full_path_file_local)
+                                Thread.Sleep(20)
                                 If errorcheck = "1" Then
                                     MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
                                     Exit Sub
@@ -571,11 +574,13 @@ ByVal KeyName As String, ByVal TheValue As String)
                                 End If
                             End If
                             dl2(full_path_file_dl, full_path_file_local)
+                            Thread.Sleep(20)
                             If errorcheck = "1" Then
                                 MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
                                 Exit Sub
                             End If
                         End If
+
                     Next
                 Case "gameversion"
                     startGameVer = item.Value
@@ -706,6 +711,7 @@ ByVal KeyName As String, ByVal TheValue As String)
 
     End Sub
     Private Sub GameExited()
+        MsgBox("มีความผิดพลาด กรุณารันโปรแกรมใหม่อีกครั้ง")
         Try
             If t1.IsAlive Or t1.IsThreadPoolThread Then
                 If Not proc.HasExited Then
@@ -752,34 +758,35 @@ ByVal KeyName As String, ByVal TheValue As String)
         'BeginInvoke(New GameExitedSafe(AddressOf GameExited))
         'End If
         If Game.checkVerJava("1.8") = False Then
+            BeginInvoke(New GameLogSafe(AddressOf GameLog), "Download Java... Please wait")
             If Environment.Is64BitOperatingSystem Then
                 If Not File.Exists(MyPath & "jre1.8.zip") Then
-                    dl2(server & "jre1.8_x64.zip", MyPath & "jre1.8.zip")
+                    dl2(server + "jre1.8_x64.zip", "jre1.8.zip")
                 End If
                 javaPath = MyPath & "jre1.8_x64"
             Else
                 If Not File.Exists(MyPath & "jre1.8.zip") Then
-                    dl2(server & "jre1.8_x86.zip", MyPath & "jre1.8.zip")
+                    dl2(server + "jre1.8_x86.zip", "jre1.8.zip")
                 End If
                 javaPath = MyPath & "jre1.8_x86"
             End If
+
             If errorcheck = "1" Then
                 BeginInvoke(New GameExitedSafe(AddressOf GameExited))
             End If
-            unzip("jre1.8.zip")
+
         Else
-            javaPath = Game.getJavaPath("1.8")
+                javaPath = Game.getJavaPath("1.8")
         End If
-        procStartInfo.Arguments = Game.getCommand(gamePath, gamePath_, Username.Text, SelectVersion.selectVersion)
-        procStartInfo.FileName = javaPath & "\bin\javaw.exe"
-        procStartInfo.RedirectStandardOutput = True
-        procStartInfo.UseShellExecute = False
-        procStartInfo.CreateNoWindow = True
-
-        proc = New Process()
-        proc.StartInfo = procStartInfo
-
+        MsgBox("test")
         Try
+            procStartInfo.Arguments = Game.getCommand(gamePath, gamePath_, Username.Text, SelectVersion.selectVersion)
+            procStartInfo.FileName = javaPath & "\bin\javaw.exe"
+            procStartInfo.RedirectStandardOutput = True
+            procStartInfo.UseShellExecute = False
+            procStartInfo.CreateNoWindow = True
+            proc = New Process()
+            proc.StartInfo = procStartInfo
             AddHandler proc.OutputDataReceived, AddressOf ProcDataReceived
             AddHandler proc.Exited, AddressOf GameExited
             proc.Start()
@@ -796,8 +803,8 @@ ByVal KeyName As String, ByVal TheValue As String)
                 log = ""
             End While
         Catch ex As Exception
+            MsgBox(ex)
         End Try
-
 
         'Exited Game and Stop Threading
         BeginInvoke(New GameExitedSafe(AddressOf GameExited))

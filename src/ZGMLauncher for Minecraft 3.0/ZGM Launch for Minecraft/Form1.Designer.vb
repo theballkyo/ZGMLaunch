@@ -255,6 +255,7 @@ Partial Class Form1
         'delay
         '
         Me.delay.Enabled = True
+        Me.delay.Interval = 500
         '
         'Form1
         '

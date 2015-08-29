@@ -161,6 +161,7 @@ Module Game
         ElseIf version = "1710forge" Then
             Return command1710forge(gamePath, gamePath_, name)
         End If
+        Return Nothing
     End Function
 
     Function command180(gamePath As String, gamePath_ As String, name As String)
@@ -241,6 +242,9 @@ Module Game
 
         'ver = My.Computer.Registry.GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Java Runtime Environment", "CurrentVersion", Nothing)
         'Return ver
+        If getVerJava() = Nothing Then
+            Return False
+        End If
         If getVerJava().Contains(version) Then
             Return True
         End If
