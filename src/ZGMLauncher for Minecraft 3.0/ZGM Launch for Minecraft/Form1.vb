@@ -114,12 +114,10 @@ ByVal KeyName As String, ByVal TheValue As String)
 
             'MessageBox.Show("ยกเลิกการ Download", "Aborted", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
-
         Else
             Me.Label4.Text = "Successfully downloaded"
 
             MessageBox.Show("Successfully downloaded!", "All OK", MessageBoxButtons.OK, MessageBoxIcon.Information)
-
 
         End If
 
@@ -535,6 +533,9 @@ ByVal KeyName As String, ByVal TheValue As String)
         Dim output As String = ""
         For Each item As JProperty In data
             item.CreateReader()
+
+            'BeginInvoke(New DownloadTextSafe(AddressOf DownloadText), percentage, speed, bytesIn, totalBytes)
+
             Select Case item.Name
                 Case "version"
                     If My.Settings.version < Convert.ToInt16(item.Value) Then
@@ -561,7 +562,6 @@ ByVal KeyName As String, ByVal TheValue As String)
                         If File.Exists(full_path_file_local) Then
                             If ZGM.CalcMD5(full_path_file_local).ToLower <> md5.ToLower Then
                                 dl2(full_path_file_dl, full_path_file_local)
-                                Thread.Sleep(20)
                                 If errorcheck = "1" Then
                                     MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
                                     Exit Sub
@@ -574,7 +574,6 @@ ByVal KeyName As String, ByVal TheValue As String)
                                 End If
                             End If
                             dl2(full_path_file_dl, full_path_file_local)
-                            Thread.Sleep(20)
                             If errorcheck = "1" Then
                                 MsgBox("มีข้อผิดพลาดขณะทำการตรวจสอบไฟล์ กรุณาลองใหม่", MsgBoxStyle.Critical)
                                 Exit Sub
